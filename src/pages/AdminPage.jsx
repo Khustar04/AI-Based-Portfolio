@@ -61,6 +61,9 @@ export default function AdminPage() {
     resetToDefaults,
     exportDataJSON,
     importDataJSON,
+    cloudStatus,
+    saveCloudCredentials,
+    uploadImageFile,
   } = usePortfolioData();
 
   // Auth State
@@ -172,9 +175,20 @@ export default function AdminPage() {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const compressed = await compressImageFile(file, 600, 600, 0.82);
-        setProfileForm((prev) => ({ ...prev, profilePhoto: compressed }));
-        showToast("Profile photo optimized!");
+        let finalUrl = null;
+        if (cloudStatus?.isConfigured) {
+          finalUrl = await uploadImageFile(file, "profile");
+        }
+        if (!finalUrl) {
+          finalUrl = await compressImageFile(file, 600, 600, 0.82);
+        }
+        setProfileForm((prev) => ({ ...prev, profilePhoto: finalUrl }));
+        updatePersonalInfo({ profilePhoto: finalUrl });
+        showToast(
+          cloudStatus?.isConfigured
+            ? "Photo uploaded to Cloud Storage (Visible globally)!"
+            : "Profile photo updated!"
+        );
       } catch (err) {
         showToast("Failed to process image file", "error");
       }
@@ -414,9 +428,19 @@ export default function AdminPage() {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const compressed = await compressImageFile(file, 600, 600, 0.82);
-        setCertForm((prev) => ({ ...prev, image: compressed }));
-        showToast("Certificate badge uploaded!");
+        let finalUrl = null;
+        if (cloudStatus?.isConfigured) {
+          finalUrl = await uploadImageFile(file, "certificates");
+        }
+        if (!finalUrl) {
+          finalUrl = await compressImageFile(file, 600, 600, 0.82);
+        }
+        setCertForm((prev) => ({ ...prev, image: finalUrl }));
+        showToast(
+          cloudStatus?.isConfigured
+            ? "Certificate badge uploaded to Cloud Storage!"
+            : "Certificate badge uploaded!"
+        );
       } catch (err) {
         showToast("Failed to process image file", "error");
       }
@@ -574,12 +598,28 @@ export default function AdminPage() {
   };
 
   // -------------------------------------------------------------
-  // SETTINGS: PIN CHANGE & BACKUP
+  // SETTINGS: PIN CHANGE, CLOUD DB & BACKUP
   // -------------------------------------------------------------
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [importJsonText, setImportJsonText] = useState("");
+  const [supabaseUrlInput, setSupabaseUrlInput] = useState(() => cloudStatus?.url || "");
+  const [supabaseKeyInput, setSupabaseKeyInput] = useState(() => cloudStatus?.key || "");
   const importFileRef = useRef(null);
+
+  const handleSaveCloudConfig = (e) => {
+    e.preventDefault();
+    if (!supabaseUrlInput.trim() || !supabaseKeyInput.trim()) {
+      showToast("Please provide both Supabase URL and Anon Key", "error");
+      return;
+    }
+    const res = saveCloudCredentials(supabaseUrlInput, supabaseKeyInput);
+    if (res.isConfigured) {
+      showToast("Supabase connected! Live sync active across all devices.");
+    } else {
+      showToast("Invalid URL format. Make sure it starts with https://", "error");
+    }
+  };
 
   const handlePinChangeSubmit = (e) => {
     e.preventDefault();
@@ -1502,6 +1542,80 @@ export default function AdminPage() {
           {/* ========================================================= */}
           {activeTab === "settings" && (
             <div className="space-y-8 max-w-3xl">
+              {/* Cloud Database & Storage Section (Supabase) */}
+              <div className="bg-slate-50 dark:bg-slate-800/40 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/70">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                      ⚡
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                        Cloud Database & Storage (Supabase)
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Enables real-time global syncing across all devices and permanent photo hosting.
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                    className={`px-3 py-1 text-xs font-bold rounded-full border ${
+                      cloudStatus?.isConfigured
+                        ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                        : "bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400"
+                    }`}
+                  >
+                    {cloudStatus?.isConfigured
+                      ? "🟢 Cloud Connected (Live Across All Devices)"
+                      : "⚪ Local Browser Mode"}
+                  </span>
+                </div>
+
+                <form onSubmit={handleSaveCloudConfig} className="space-y-4 max-w-xl mt-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Supabase Project URL
+                    </label>
+                    <input
+                      type="url"
+                      value={supabaseUrlInput}
+                      onChange={(e) => setSupabaseUrlInput(e.target.value)}
+                      placeholder="https://xyzcompany.supabase.co"
+                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Supabase Anon / Public API Key
+                    </label>
+                    <input
+                      type="password"
+                      value={supabaseKeyInput}
+                      onChange={(e) => setSupabaseKeyInput(e.target.value)}
+                      placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="submit"
+                      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
+                    >
+                      Connect & Sync Cloud
+                    </button>
+                    <a
+                      href="https://supabase.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                    >
+                      <span>Create Free Supabase Project</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  </div>
+                </form>
+              </div>
+
               {/* PIN Change Section */}
               <div className="bg-slate-50 dark:bg-slate-800/40 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/70">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">

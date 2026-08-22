@@ -1,10 +1,16 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { personalInfo as defaultPersonalInfo } from "../data/personalInfo";
 import { projects as defaultProjects } from "../data/projects";
 import { skills as defaultSkills } from "../data/skills";
 import { certifications as defaultCertifications } from "../data/certifications";
 import { education as defaultEducation } from "../data/education";
 import { socialLinks as defaultSocialLinks } from "../data/socialLinks";
+import {
+  fetchCloudPortfolio,
+  saveCloudPortfolio,
+  getSupabaseCredentials,
+  uploadImageToSupabase,
+} from "../utils/supabaseClient";
 
 const PortfolioDataContext = createContext(null);
 
@@ -106,7 +112,53 @@ export function PortfolioDataProvider({ children }) {
     Boolean(loadFromStorage(STORAGE_KEYS.ADMIN_AUTH, false))
   );
 
-  // Sync to storage
+  const [cloudStatus, setCloudStatus] = useState(() => getSupabaseCredentials());
+  const initialCloudLoadedRef = useRef(false);
+
+  // Hydrate from Supabase Cloud on initial load (so all devices see latest data)
+  useEffect(() => {
+    async function hydrateFromCloud() {
+      if (initialCloudLoadedRef.current) return;
+      initialCloudLoadedRef.current = true;
+
+      try {
+        const cloudData = await fetchCloudPortfolio();
+        if (cloudData) {
+          if (cloudData.personalInfo) setPersonalInfoState(cloudData.personalInfo);
+          if (Array.isArray(cloudData.projects)) setProjectsState(cloudData.projects);
+          if (Array.isArray(cloudData.skills)) setSkillsState(cloudData.skills);
+          if (Array.isArray(cloudData.certifications)) setCertificationsState(cloudData.certifications);
+          if (Array.isArray(cloudData.education)) setEducationState(cloudData.education);
+          if (Array.isArray(cloudData.socialLinks)) setSocialLinksState(cloudData.socialLinks);
+        }
+      } catch (err) {
+        console.warn("Cloud sync hydration notice:", err);
+      }
+    }
+    hydrateFromCloud();
+  }, []);
+
+  // Save credentials helper for Admin Panel
+  const saveCloudCredentials = (url, key) => {
+    localStorage.setItem("portfolio_supabase_url", url.trim());
+    localStorage.setItem("portfolio_supabase_key", key.trim());
+    const creds = getSupabaseCredentials();
+    setCloudStatus(creds);
+    return creds;
+  };
+
+  // Upload image helper with cloud priority
+  const uploadImageFile = async (file, folder = "photos") => {
+    try {
+      const cloudUrl = await uploadImageToSupabase(file, folder);
+      if (cloudUrl) return cloudUrl;
+    } catch (err) {
+      console.warn("Supabase upload failed, falling back to local:", err.message);
+    }
+    return null;
+  };
+
+  // Sync to local storage & push to cloud in background
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.PERSONAL_INFO, personalInfo);
   }, [personalInfo]);
@@ -138,6 +190,21 @@ export function PortfolioDataProvider({ children }) {
   useEffect(() => {
     saveToStorage(STORAGE_KEYS.ADMIN_AUTH, isAdminAuthenticated);
   }, [isAdminAuthenticated]);
+
+  // Debounced cloud background sync
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      saveCloudPortfolio({
+        personalInfo,
+        projects,
+        skills,
+        certifications,
+        education,
+        socialLinks,
+      });
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [personalInfo, projects, skills, certifications, education, socialLinks]);
 
   // Auth methods
   const loginAdmin = (enteredPin) => {
@@ -447,6 +514,11 @@ export function PortfolioDataProvider({ children }) {
         addSocialLink,
         updateSocialLink,
         deleteSocialLink,
+
+        // Cloud & Image Storage
+        cloudStatus,
+        saveCloudCredentials,
+        uploadImageFile,
 
         // Utilities
         resetToDefaults,
