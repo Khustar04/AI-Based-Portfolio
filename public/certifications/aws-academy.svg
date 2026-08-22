@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="awsGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF9900"/>
+      <stop offset="100%" stop-color="#FFB84D"/>
+    </linearGradient>
+    <linearGradient id="tealLine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#bg)" rx="16"/>
+
+  <!-- Geometric Decorative Lines (AWS Academy Style) -->
+  <g stroke="url(#tealLine)" stroke-width="1.5" fill="none">
+    <polygon points="100,50 220,130 160,270 40,200"/>
+    <polygon points="80,30 240,120 180,290 20,210"/>
+    <polygon points="60,10 260,110 200,310 0,220"/>
+    <polygon points="120,70 200,140 140,250 60,190"/>
+    <line x1="0" y1="350" x2="300" y2="500"/>
+    <line x1="50" y1="320" x2="350" y2="500"/>
+  </g>
+
+  <!-- AWS Academy Header Logo Text -->
+  <text x="660" y="70" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="900" fill="#FFFFFF" text-anchor="middle">aws</text>
+  <text x="730" y="70" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="400" fill="#CBD5E1" text-anchor="middle">academy</text>
+  <path d="M 620 85 Q 670 100 720 85" fill="none" stroke="#FF9900" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Recipient Name -->
+  <text x="70" y="195" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="36" font-weight="800" fill="#FFFFFF">Khustar Hussain</text>
+
+  <!-- Certificate Subtitle -->
+  <text x="70" y="245" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="600" fill="#94A3B8">Certificate of Completion for</text>
+  <text x="70" y="275" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="700" fill="#38BDF8">AWS Academy Graduate - AWS Academy Cloud Foundations</text>
+
+  <!-- Details Row -->
+  <g transform="translate(70, 330)">
+    <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#F8FAFC">Course hours completed</text>
+    <text x="0" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="500" fill="#94A3B8">20 hours</text>
+
+    <text x="220" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#F8FAFC">Issued on</text>
+    <text x="220" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="500" fill="#94A3B8">05/24/2025</text>
+  </g>
+
+  <!-- Digital Badge / Credly Footer -->
+  <g transform="translate(70, 420)">
+    <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#F8FAFC">Digital badge</text>
+    <text x="0" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="500" fill="#38BDF8">credly.com/go/HI9BK3wK</text>
+  </g>
+
+  <!-- Badge Seal Icon -->
+  <g transform="translate(680, 390)">
+    <circle cx="0" cy="0" r="45" fill="#1e293b" stroke="#FF9900" stroke-width="2.5"/>
+    <circle cx="0" cy="0" r="38" fill="none" stroke="#FF9900" stroke-width="1" stroke-dasharray="4,4"/>
+    <text x="0" y="-8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="800" fill="#FF9900" text-anchor="middle">AWS</text>
+    <text x="0" y="8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9" font-weight="700" fill="#FFFFFF" text-anchor="middle">ACADEMY</text>
+    <text x="0" y="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="8" font-weight="600" fill="#38BDF8" text-anchor="middle">GRADUATE</text>
+  </g>
+</svg>
