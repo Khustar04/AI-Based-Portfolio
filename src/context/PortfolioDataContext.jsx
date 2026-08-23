@@ -10,7 +10,9 @@ import {
   saveCloudPortfolio,
   getSupabaseCredentials,
   uploadImageToSupabase,
+  uploadResumeToSupabase,
   testAndSyncSupabase,
+  getSupabase,
 } from "../utils/supabaseClient";
 
 const PortfolioDataContext = createContext(null);
@@ -139,6 +141,89 @@ export function PortfolioDataProvider({ children }) {
     hydrateFromCloud();
   }, []);
 
+  // 1. Supabase Realtime Subscription (WebSocket for multi-device live sync)
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    try {
+      const channel = supabase
+        .channel("portfolio_data_realtime_channel")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "portfolio_data",
+            filter: "id=eq.main_portfolio",
+          },
+          (payload) => {
+            if (payload?.new?.payload) {
+              const cloudData = payload.new.payload;
+              if (cloudData.personalInfo) setPersonalInfoState(cloudData.personalInfo);
+              if (Array.isArray(cloudData.projects)) setProjectsState(cloudData.projects);
+              if (Array.isArray(cloudData.skills)) setSkillsState(cloudData.skills);
+              if (Array.isArray(cloudData.certifications)) setCertificationsState(cloudData.certifications);
+              if (Array.isArray(cloudData.education)) setEducationState(cloudData.education);
+              if (Array.isArray(cloudData.socialLinks)) setSocialLinksState(cloudData.socialLinks);
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (err) {
+      console.warn("Realtime subscription note:", err);
+    }
+  }, [cloudStatus?.isConfigured]);
+
+  // 2. Local multi-tab real-time listener (updates other tabs on same device immediately)
+  useEffect(() => {
+    let bc = null;
+    try {
+      if (typeof window !== "undefined" && window.BroadcastChannel) {
+        bc = new BroadcastChannel("portfolio_state_broadcast");
+        bc.onmessage = (event) => {
+          if (event.data) {
+            const { personalInfo, projects, skills, certifications, education, socialLinks } = event.data;
+            if (personalInfo) setPersonalInfoState(personalInfo);
+            if (projects) setProjectsState(projects);
+            if (skills) setSkillsState(skills);
+            if (certifications) setCertificationsState(certifications);
+            if (education) setEducationState(education);
+            if (socialLinks) setSocialLinksState(socialLinks);
+          }
+        };
+      }
+    } catch {
+      // Fallback
+    }
+
+    const handleStorage = (e) => {
+      try {
+        if (!e.newValue) return;
+        const parsed = JSON.parse(e.newValue);
+        if (e.key === STORAGE_KEYS.PERSONAL_INFO) setPersonalInfoState(parsed);
+        if (e.key === STORAGE_KEYS.PROJECTS) setProjectsState(parsed);
+        if (e.key === STORAGE_KEYS.SKILLS) setSkillsState(parsed);
+        if (e.key === STORAGE_KEYS.CERTIFICATIONS) setCertificationsState(parsed);
+        if (e.key === STORAGE_KEYS.EDUCATION) setEducationState(parsed);
+        if (e.key === STORAGE_KEYS.SOCIAL_LINKS) setSocialLinksState(parsed);
+      } catch {
+        // Ignore JSON errors
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      if (bc) bc.close();
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
   // Save and test credentials helper for Admin Panel
   const connectAndSyncCloud = async (url, key) => {
     const currentPayload = {
@@ -175,6 +260,38 @@ export function PortfolioDataProvider({ children }) {
       console.warn("Supabase upload failed, falling back to local:", err.message);
     }
     return null;
+  };
+
+  // Upload resume helper (replaces old file in DB and updates personalInfo.resumeUrl)
+  const uploadResumeFile = async (file) => {
+    try {
+      const cloudUrl = await uploadResumeToSupabase(file);
+      if (cloudUrl) {
+        updatePersonalInfo({ resumeUrl: cloudUrl });
+        return {
+          success: true,
+          url: cloudUrl,
+          message: "Resume PDF uploaded to Cloud Storage and updated live across the portfolio!",
+        };
+      }
+    } catch (err) {
+      console.warn("Cloud resume upload note:", err.message);
+    }
+
+    // Fallback for local testing
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const localDataUri = e.target.result;
+        updatePersonalInfo({ resumeUrl: localDataUri });
+        resolve({
+          success: true,
+          url: localDataUri,
+          message: "Resume updated locally! (Connect Supabase in Settings for global cloud hosting)",
+        });
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   // Sync to local storage & push to cloud in background
@@ -534,11 +651,12 @@ export function PortfolioDataProvider({ children }) {
         updateSocialLink,
         deleteSocialLink,
 
-        // Cloud & Image Storage
+        // Cloud & Image / Resume Storage
         cloudStatus,
         connectAndSyncCloud,
         syncNowToCloud,
         uploadImageFile,
+        uploadResumeFile,
 
         // Utilities
         resetToDefaults,

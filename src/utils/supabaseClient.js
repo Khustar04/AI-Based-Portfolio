@@ -77,6 +77,38 @@ export async function uploadImageToSupabase(file, folder = "uploads") {
 }
 
 /**
+ * Upload Resume PDF to Supabase Storage (replaces old resume)
+ */
+export async function uploadResumeToSupabase(file) {
+  const supabase = getSupabase();
+  if (!supabase) {
+    throw new Error("Supabase is not connected. Connect in Settings to store in Cloud.");
+  }
+
+  const fileName = "resume/Khustar_Hussain_Resume.pdf";
+
+  // Upload with upsert (replaces old resume)
+  const { error } = await supabase.storage
+    .from("portfolio-assets")
+    .upload(fileName, file, {
+      cacheControl: "0",
+      upsert: true,
+      contentType: "application/pdf",
+    });
+
+  if (error) {
+    console.error("Supabase resume upload error:", error);
+    throw error;
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from("portfolio-assets")
+    .getPublicUrl(fileName);
+
+  return `${publicUrlData?.publicUrl}?v=${Date.now()}`;
+}
+
+/**
  * Fetch the latest live portfolio data snapshot from Supabase
  */
 export async function fetchCloudPortfolio(customClient = null) {

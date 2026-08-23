@@ -27,6 +27,7 @@ import {
   Sparkles,
   Loader2,
   RefreshCw,
+  FileText,
 } from "lucide-react";
 import { usePortfolioData } from "../context/PortfolioDataContext";
 import { compressImageFile } from "../utils/imageCompressor";
@@ -67,6 +68,7 @@ export default function AdminPage() {
     connectAndSyncCloud,
     syncNowToCloud,
     uploadImageFile,
+    uploadResumeFile,
   } = usePortfolioData();
 
   // Auth State
@@ -195,6 +197,32 @@ export default function AdminPage() {
       } catch (err) {
         showToast("Failed to process image file", "error");
       }
+    }
+  };
+
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      showToast("Please select a valid PDF document (.pdf)", "error");
+      return;
+    }
+    setIsUploadingResume(true);
+    try {
+      const res = await uploadResumeFile(file);
+      if (res.success) {
+        setProfileForm((prev) => ({ ...prev, resumeUrl: res.url }));
+        showToast(res.message);
+      } else {
+        showToast(res.message || "Failed to upload resume", "error");
+      }
+    } catch (err) {
+      showToast(`Resume upload error: ${err.message}`, "error");
+    } finally {
+      setIsUploadingResume(false);
+      e.target.value = "";
     }
   };
 
@@ -941,31 +969,81 @@ export default function AdminPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Photo upload */}
-                <div className="bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex flex-col items-center text-center">
-                  <div className="w-28 h-28 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-700 mb-4 border-2 border-blue-500/30 relative group shadow-md">
-                    <img
-                      src={profileForm.profilePhoto}
-                      alt="Profile Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                      }}
-                    />
+                {/* Photo & Resume Upload Column */}
+                <div className="space-y-4">
+                  {/* Photo upload */}
+                  <div className="bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex flex-col items-center text-center">
+                    <div className="w-28 h-28 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-700 mb-4 border-2 border-blue-500/30 relative group shadow-md">
+                      <img
+                        src={profileForm.profilePhoto}
+                        alt="Profile Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    </div>
+                    <label className="w-full py-2.5 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 cursor-pointer flex items-center justify-center gap-1.5 transition-all shadow-xs">
+                      <Upload size={14} />
+                      <span>Upload New Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-[11px] text-slate-400 mt-2">
+                      Auto-optimized on upload (JPG, PNG, WEBP)
+                    </p>
                   </div>
-                  <label className="w-full py-2.5 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500 cursor-pointer flex items-center justify-center gap-1.5 transition-all shadow-xs">
-                    <Upload size={14} />
-                    <span>Upload New Photo</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  <p className="text-[11px] text-slate-400 mt-2">
-                    Auto-optimized on upload (JPG, PNG, WEBP)
-                  </p>
+
+                  {/* Resume PDF Upload */}
+                  <div className="bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 flex flex-col items-center text-center">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3 shadow-xs">
+                      <FileText size={24} />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                      Resume Document (PDF)
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+                      Upload your customized resume PDF. Replaces previous resume and updates the download link live.
+                    </p>
+
+                    <label className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold cursor-pointer flex items-center justify-center gap-1.5 transition-all shadow-md shadow-blue-500/20">
+                      {isUploadingResume ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Uploading Resume...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={14} />
+                          <span>Upload Custom Resume PDF</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        disabled={isUploadingResume}
+                        onChange={handleResumeUpload}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {personalInfo?.resumeUrl && (
+                      <a
+                        href={personalInfo.resumeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download="Khustar_Hussain_Resume.pdf"
+                        className="mt-3 text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
+                      >
+                        <span>Preview / Download Active PDF</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    )}
+                  </div>
                 </div>
 
                 {/* Names & Contact */}

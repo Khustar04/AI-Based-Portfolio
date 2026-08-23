@@ -30,19 +30,45 @@ export default function AIAssistant() {
   const isAdminMode = location.pathname === "/manage-portfolio" && isAdminAuthenticated;
 
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState(() => [
-    {
-      role: "assistant",
-      content: isAdminMode
-        ? `⚡ **Admin Command Mode Active!**\n\nHello ${personalInfo?.name || "Khustar"}! I have direct control over your portfolio. You can command me to:\n• *Add a new project with technologies*\n• *Update your bio, email, or phone*\n• *Add or modify skills & certificates*\n• *Export backups or reset data*`
-        : `Hi! I'm ${personalInfo?.firstName || personalInfo?.name || "Khustar"}'s AI Assistant. Ask me anything about his skills, projects, or tell me where you'd like to go on this portfolio! 🚀`,
-    },
-  ]);
+  const [messages, setMessages] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("portfolio_ai_chat_history_v1");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load chat history:", e);
+      }
+    }
+    return [
+      {
+        role: "assistant",
+        content: isAdminMode
+          ? `⚡ **Admin Command Mode Active!**\n\nHello ${personalInfo?.name || "Khustar"}! I have direct control over your portfolio. You can command me to:\n• *Add a new project with technologies*\n• *Update your bio, email, or phone*\n• *Add or modify skills & certificates*\n• *Export backups or reset data*`
+          : `Hi! I'm ${personalInfo?.firstName || personalInfo?.name || "Khustar"}'s AI Assistant. Ask me anything about his skills, projects, or tell me where you'd like to go on this portfolio! 🚀`,
+      },
+    ];
+  });
 
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Persist conversation history to local storage
+  useEffect(() => {
+    if (messages && messages.length > 0) {
+      try {
+        localStorage.setItem("portfolio_ai_chat_history_v1", JSON.stringify(messages.slice(-40)));
+      } catch {
+        // Ignore quota
+      }
+    }
+  }, [messages]);
 
   // Update greeting when entering/exiting Admin mode
   useEffect(() => {
@@ -250,6 +276,11 @@ export default function AIAssistant() {
           : `Hi! I'm ${personalInfo?.firstName || personalInfo?.name || "Khustar"}'s AI Assistant. How can I help you navigate or answer questions today?`,
       },
     ]);
+    try {
+      localStorage.removeItem("portfolio_ai_chat_history_v1");
+    } catch {
+      // Ignore
+    }
   };
 
   const handleKeyDown = (e) => {
