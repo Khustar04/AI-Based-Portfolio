@@ -644,7 +644,7 @@ export default function AIAssistant() {
           )}
 
           {/* Messages Container */}
-          <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-4 bg-slate-50/40 dark:bg-slate-900/50 text-gray-800 dark:text-gray-200">
+          <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-4 bg-slate-50/60 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200">
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -654,18 +654,18 @@ export default function AIAssistant() {
               >
                 {/* Avatar */}
                 <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
+                  className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 shadow-xs ${
                     msg.role === "user"
                       ? "bg-blue-600 text-white"
                       : isAdminMode
-                      ? "bg-slate-900 border border-amber-400/50 text-amber-400"
-                      : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400"
+                      ? "bg-amber-50 dark:bg-slate-900 border border-amber-400/80 text-amber-600 dark:text-amber-400"
+                      : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400"
                   }`}
                 >
                   {msg.role === "user" ? (
                     <User size={14} />
                   ) : isAdminMode ? (
-                    <Zap size={14} className="fill-amber-400 text-amber-400" />
+                    <Zap size={14} className="fill-amber-500 text-amber-500" />
                   ) : (
                     <img src="/ai-icon.svg" alt="AI" className="w-4 h-4" />
                   )}
@@ -675,10 +675,10 @@ export default function AIAssistant() {
                 <div
                   className={`max-w-[84%] px-4 py-3 rounded-2xl text-xs md:text-sm leading-relaxed shadow-sm ${
                     msg.role === "user"
-                      ? "bg-blue-600 text-white rounded-br-sm"
+                      ? "bg-blue-600 text-white rounded-br-sm shadow-blue-500/20"
                       : isAdminMode
-                      ? "bg-slate-900/90 dark:bg-slate-900 border border-slate-700/90 text-slate-100 rounded-bl-sm"
-                      : "bg-white dark:bg-slate-800 border border-gray-200/80 dark:border-slate-700/80 text-gray-800 dark:text-gray-200 rounded-bl-sm"
+                      ? "bg-white dark:bg-slate-800/95 border border-indigo-100 dark:border-slate-700/80 text-slate-800 dark:text-slate-100 rounded-bl-sm shadow-sm"
+                      : "bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 rounded-bl-sm shadow-xs"
                   }`}
                 >
                   {msg.content ? (
@@ -689,9 +689,9 @@ export default function AIAssistant() {
                     )
                   ) : (
                     <div className="flex gap-1.5 items-center py-1">
-                      <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms] ${isAdminMode ? "bg-amber-400" : "bg-blue-600 dark:bg-blue-400"}`} />
-                      <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms] ${isAdminMode ? "bg-amber-400" : "bg-blue-600 dark:bg-blue-400"}`} />
-                      <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms] ${isAdminMode ? "bg-amber-400" : "bg-blue-600 dark:bg-blue-400"}`} />
+                      <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms] ${isAdminMode ? "bg-amber-500" : "bg-blue-600 dark:bg-blue-400"}`} />
+                      <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms] ${isAdminMode ? "bg-amber-500" : "bg-blue-600 dark:bg-blue-400"}`} />
+                      <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms] ${isAdminMode ? "bg-amber-500" : "bg-blue-600 dark:bg-blue-400"}`} />
                     </div>
                   )}
                 </div>
@@ -703,8 +703,8 @@ export default function AIAssistant() {
 
           {/* Suggested Questions / Commands */}
           {messages.length <= 2 && (
-            <div className="px-4 py-2 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 max-h-32 overflow-y-auto shrink-0">
-              <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <div className="px-4 py-2.5 bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 max-h-32 overflow-y-auto shrink-0">
+              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                 <span>{isAdminMode ? "⚡ Suggested Admin Commands:" : "💡 Suggested questions:"}</span>
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -712,10 +712,10 @@ export default function AIAssistant() {
                   <button
                     key={q}
                     onClick={() => handleSend(q)}
-                    className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer border text-left ${
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer border text-left ${
                       isAdminMode
-                        ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
-                        : "bg-blue-50/80 dark:bg-blue-900/30 border-blue-100 dark:border-blue-800/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50"
+                        ? "bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-900 dark:bg-amber-950/40 dark:border-amber-700/50 dark:text-amber-300"
+                        : "bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 border-blue-200 dark:border-blue-800/40 text-blue-700 dark:text-blue-300"
                     }`}
                   >
                     {q}
@@ -726,7 +726,7 @@ export default function AIAssistant() {
           )}
 
           {/* Input Bar */}
-          <div className="border-t border-gray-200 dark:border-slate-700 px-4 py-3 bg-white dark:bg-slate-900 shrink-0">
+          <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-3 bg-white dark:bg-slate-900 shrink-0">
             <div className="flex gap-2">
               <input
                 ref={inputRef}
@@ -739,7 +739,7 @@ export default function AIAssistant() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 px-3.5 py-2.5 text-xs md:text-sm bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+                className="flex-1 px-3.5 py-2.5 text-xs md:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-colors"
               />
               <button
                 onClick={() => handleSend()}
