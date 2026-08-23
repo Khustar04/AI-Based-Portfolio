@@ -220,6 +220,7 @@ ${baseContext}`;
 
 // Active verified Gemini models in priority order (Fastest sub-300ms first)
 const FAST_MODELS = [
+  "gemini-3.5-flash-Lite",
   "gemini-2.0-flash",
   "gemini-1.5-flash",
   "gemini-1.5-flash-8b",
