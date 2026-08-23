@@ -583,17 +583,30 @@ export function PortfolioDataProvider({ children }) {
       ...newSocial,
       id: newSocial.id || `social-${Date.now()}`,
     };
-    setSocialLinksState((prev) => [...prev, socialWithId]);
+    setSocialLinksState((prev) => {
+      const currentList = Array.isArray(prev) ? prev : [];
+      const next = [...currentList, socialWithId];
+      saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, next);
+      return next;
+    });
   };
 
   const updateSocialLink = (id, updatedSocial) => {
-    setSocialLinksState((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updatedSocial } : s))
-    );
+    setSocialLinksState((prev) => {
+      const currentList = Array.isArray(prev) ? prev : [];
+      const next = currentList.map((s) => (s.id === id ? { ...s, ...updatedSocial } : s));
+      saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, next);
+      return next;
+    });
   };
 
   const deleteSocialLink = (id) => {
-    setSocialLinksState((prev) => prev.filter((s) => s.id !== id));
+    setSocialLinksState((prev) => {
+      const currentList = Array.isArray(prev) ? prev : [];
+      const next = currentList.filter((s) => s.id !== id);
+      saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, next);
+      return next;
+    });
   };
 
   // Reset to original defaults
