@@ -622,6 +622,7 @@ export default function AdminPage() {
       (typeof social.platform === "string" && social.platform.toLowerCase()) ||
       "globe";
     setSocialForm({
+      id: social.id,
       platform: social.platform || social.name || "",
       url: social.url || "",
       username: social.username || social.handle || "",
@@ -638,14 +639,16 @@ export default function AdminPage() {
       return;
     }
     const iconId = (socialForm.iconName || socialForm.icon || socialForm.platform || "globe").toLowerCase();
+    const targetId = editingSocial?.id || socialForm.id || `social-${Date.now()}`;
     const finalSocial = {
       ...socialForm,
+      id: targetId,
       name: socialForm.platform,
       icon: iconId,
       iconName: iconId,
     };
     if (editingSocial) {
-      updateSocialLink(editingSocial.id, finalSocial);
+      updateSocialLink(targetId, finalSocial);
       showToast(`Updated ${socialForm.platform} link!`);
     } else {
       addSocialLink(finalSocial);
@@ -1984,12 +1987,11 @@ export default function AdminPage() {
                         </button>
                         <button
                           onClick={() => {
-                            if (window.confirm(`Delete ${social.platform} link?`)) {
-                              deleteSocialLink(social.id);
-                              showToast("Social link deleted!");
-                            }
+                            deleteSocialLink(social.id);
+                            showToast(`Deleted ${social.platform || "social"} link!`);
                           }}
-                          className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg cursor-pointer"
+                          title={`Delete ${social.platform} link`}
+                          className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg cursor-pointer transition-colors"
                         >
                           <Trash2 size={14} />
                         </button>

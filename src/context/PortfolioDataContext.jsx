@@ -582,6 +582,11 @@ export function PortfolioDataProvider({ children }) {
     const socialWithId = {
       ...newSocial,
       id: newSocial.id || `social-${Date.now()}`,
+      platform: newSocial.platform || newSocial.name || "Link",
+      url: newSocial.url || "",
+      username: newSocial.username !== undefined ? newSocial.username : (newSocial.handle || ""),
+      icon: newSocial.icon || newSocial.iconName || "globe",
+      iconName: newSocial.iconName || newSocial.icon || "globe",
     };
     setSocialLinksState((prev) => {
       const currentList = Array.isArray(prev) ? prev : [];
@@ -594,7 +599,21 @@ export function PortfolioDataProvider({ children }) {
   const updateSocialLink = (id, updatedSocial) => {
     setSocialLinksState((prev) => {
       const currentList = Array.isArray(prev) ? prev : [];
-      const next = currentList.map((s) => (s.id === id ? { ...s, ...updatedSocial } : s));
+      const next = currentList.map((s) => {
+        if (String(s.id) === String(id) || s.id === id) {
+          return {
+            ...s,
+            ...updatedSocial,
+            id: s.id,
+            platform: updatedSocial.platform || updatedSocial.name || s.platform || "Link",
+            url: updatedSocial.url || s.url || "",
+            username: updatedSocial.username !== undefined ? updatedSocial.username : (s.username || ""),
+            icon: updatedSocial.icon || updatedSocial.iconName || s.icon || "globe",
+            iconName: updatedSocial.iconName || updatedSocial.icon || s.iconName || "globe",
+          };
+        }
+        return s;
+      });
       saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, next);
       return next;
     });
@@ -603,7 +622,7 @@ export function PortfolioDataProvider({ children }) {
   const deleteSocialLink = (id) => {
     setSocialLinksState((prev) => {
       const currentList = Array.isArray(prev) ? prev : [];
-      const next = currentList.filter((s) => s.id !== id);
+      const next = currentList.filter((s) => String(s.id) !== String(id) && s.id !== id);
       saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, next);
       return next;
     });
