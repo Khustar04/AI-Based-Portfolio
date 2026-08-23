@@ -218,14 +218,11 @@ PORTFOLIO DATA & CONTEXT:
 ${baseContext}`;
 }
 
-// Active verified Gemini models in priority order
+// Active verified Gemini models in priority order (Fastest sub-300ms first)
 const FAST_MODELS = [
-  "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-1.5-flash",
-  "gemini-1.5-flash-latest",
-  "gemini-3.5-flash",
-  "gemini-flash-latest",
+  "gemini-1.5-flash-8b",
 ];
 
 /**
@@ -798,8 +795,8 @@ export async function streamGeminiResponse(
               systemInstruction: { parts: [{ text: systemInstruction }] },
               contents,
               generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 2048,
+                temperature: 0.6,
+                maxOutputTokens: 1024,
               },
             }),
           }
