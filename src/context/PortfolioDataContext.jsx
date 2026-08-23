@@ -352,7 +352,7 @@ export function PortfolioDataProvider({ children }) {
     saveToStorage(STORAGE_KEYS.ADMIN_AUTH, isAdminAuthenticated);
   }, [isAdminAuthenticated]);
 
-  // Debounced cloud background sync & local multi-tab broadcast
+  // Debounced cloud background sync
   useEffect(() => {
     // Skip saving on initial render or when applying incoming sync
     if (isInitialMountRef.current) {
@@ -364,25 +364,7 @@ export function PortfolioDataProvider({ children }) {
       return;
     }
 
-    // 1. Instant local multi-tab broadcast
-    try {
-      if (typeof window !== "undefined" && window.BroadcastChannel) {
-        const bc = new BroadcastChannel("portfolio_state_broadcast");
-        bc.postMessage({
-          personalInfo,
-          projects,
-          skills,
-          certifications,
-          education,
-          socialLinks,
-        });
-        bc.close();
-      }
-    } catch {
-      // Ignore
-    }
-
-    // 2. Cloud DB push and global WebSocket broadcast
+    // Cloud DB push and global WebSocket broadcast
     const timer = setTimeout(() => {
       saveCloudPortfolio({
         personalInfo,
@@ -392,7 +374,7 @@ export function PortfolioDataProvider({ children }) {
         education,
         socialLinks,
       });
-    }, 600);
+    }, 400);
     return () => clearTimeout(timer);
   }, [personalInfo, projects, skills, certifications, education, socialLinks]);
 
