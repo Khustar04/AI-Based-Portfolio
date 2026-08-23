@@ -155,3 +155,54 @@ html.dark .glass-pill {
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(30, 64, 175, 0.4);
 }
+
+/* ============================================
+   Ultra-Smooth & Snappy GPU Animations
+   ============================================ */
+
+/* Spring-like cubic bezier for instantaneous yet buttery-smooth opening/closing */
+:root {
+  --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Performance acceleration for animated elements */
+.gpu-layer {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
+}
+
+/* Smooth modal & popup entrance */
+@keyframes popupEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-popup-in {
+  animation: popupEnter 0.18s var(--ease-snappy) forwards;
+}
+
+/* Smooth fade entrance for sections & cards */
+@keyframes smoothFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-smooth-fade {
+  animation: smoothFadeIn 0.25s var(--ease-snappy) forwards;
+}
+

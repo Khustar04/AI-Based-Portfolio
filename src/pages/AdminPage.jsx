@@ -944,7 +944,7 @@ export default function AdminPage() {
         </div>
 
         {/* TAB CONTENTS */}
-        <div className="p-6 md:p-8">
+        <div key={activeTab} className="p-6 md:p-8 animate-smooth-fade">
           {/* ========================================================= */}
           {/* TAB 1: PROFILE & PERSONAL INFO */}
           {/* ========================================================= */}

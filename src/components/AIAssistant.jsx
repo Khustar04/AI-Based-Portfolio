@@ -556,10 +556,10 @@ export default function AIAssistant() {
           maxHeight: "calc(100vh - 100px)",
           zIndex: 55,
         }}
-        className={`w-[420px] max-w-[calc(100vw-32px)] h-[min(520px,calc(100vh-105px))] transition-all duration-300 ${
+        className={`w-[420px] max-w-[calc(100vw-32px)] h-[min(520px,calc(100vh-105px))] transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] gpu-layer origin-bottom-right ${
           isOpen
-            ? "opacity-100 scale-100 pointer-events-auto"
-            : "opacity-0 scale-95 pointer-events-none"
+            ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 scale-95 translate-y-2 pointer-events-none"
         }`}
       >
         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/80 dark:border-slate-700/60 overflow-hidden flex flex-col h-full">
