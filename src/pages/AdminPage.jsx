@@ -214,7 +214,8 @@ export default function AdminPage() {
       const res = await uploadResumeFile(file);
       if (res.success) {
         setProfileForm((prev) => ({ ...prev, resumeUrl: res.url }));
-        showToast(res.message);
+        updatePersonalInfo({ resumeUrl: res.url });
+        showToast(res.message || "Resume PDF uploaded & updated successfully!");
       } else {
         showToast(res.message || "Failed to upload resume", "error");
       }

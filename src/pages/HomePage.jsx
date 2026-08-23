@@ -74,24 +74,21 @@ export default function HomePage() {
   ];
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      ScrollTrigger.refresh();
-    }, 100);
-
     const ctx = gsap.context(() => {
       // Skills Stagger
       if (skillsRef.current) {
         gsap.from(".skill-card-item", {
           scrollTrigger: {
             trigger: skillsRef.current,
-            start: "top 85%",
+            start: "top 88%",
             once: true,
           },
-          y: 35,
-          opacity: 0,
-          stagger: 0.08,
-          duration: 0.6,
+          y: 25,
+          autoAlpha: 0,
+          stagger: 0.05,
+          duration: 0.45,
           ease: "power2.out",
+          clearProps: "all",
         });
       }
 
@@ -100,14 +97,15 @@ export default function HomePage() {
         gsap.from(".project-card-item", {
           scrollTrigger: {
             trigger: projectsRef.current,
-            start: "top 85%",
+            start: "top 88%",
             once: true,
           },
-          y: 40,
-          opacity: 0,
-          stagger: 0.12,
-          duration: 0.7,
+          y: 30,
+          autoAlpha: 0,
+          stagger: 0.08,
+          duration: 0.5,
           ease: "power2.out",
+          clearProps: "all",
         });
       }
 
@@ -116,14 +114,15 @@ export default function HomePage() {
         gsap.from(".cert-card-item", {
           scrollTrigger: {
             trigger: certsRef.current,
-            start: "top 85%",
+            start: "top 88%",
             once: true,
           },
-          y: 35,
-          opacity: 0,
-          stagger: 0.1,
-          duration: 0.6,
+          y: 25,
+          autoAlpha: 0,
+          stagger: 0.06,
+          duration: 0.45,
           ease: "power2.out",
+          clearProps: "all",
         });
       }
 
@@ -132,14 +131,15 @@ export default function HomePage() {
         gsap.from(".education-item", {
           scrollTrigger: {
             trigger: educationRef.current,
-            start: "top 85%",
+            start: "top 88%",
             once: true,
           },
-          x: -25,
-          opacity: 0,
-          stagger: 0.15,
-          duration: 0.7,
+          x: -20,
+          autoAlpha: 0,
+          stagger: 0.1,
+          duration: 0.5,
           ease: "power2.out",
+          clearProps: "all",
         });
       }
 
@@ -148,19 +148,19 @@ export default function HomePage() {
         gsap.from(".contact-form-card-container", {
           scrollTrigger: {
             trigger: contactRef.current,
-            start: "top 80%",
+            start: "top 85%",
             once: true,
           },
-          y: 30,
-          opacity: 0,
-          duration: 0.6,
+          y: 25,
+          autoAlpha: 0,
+          duration: 0.45,
           ease: "power2.out",
+          clearProps: "all",
         });
       }
     });
 
     return () => {
-      clearTimeout(timer);
       ctx.revert();
     };
   }, []);
