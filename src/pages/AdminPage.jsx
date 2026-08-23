@@ -595,21 +595,39 @@ export default function AdminPage() {
   const [editingSocial, setEditingSocial] = useState(null);
   const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
   const [socialForm, setSocialForm] = useState({
-    platform: "",
-    url: "",
+    platform: "Instagram",
+    url: "https://instagram.com/",
     username: "",
-    icon: "Globe",
+    icon: "instagram",
+    iconName: "instagram",
   });
 
   const openNewSocialModal = () => {
     setEditingSocial(null);
-    setSocialForm({ platform: "", url: "", username: "", icon: "Globe" });
+    setSocialForm({
+      platform: "Instagram",
+      url: "https://instagram.com/",
+      username: "",
+      icon: "instagram",
+      iconName: "instagram",
+    });
     setIsSocialModalOpen(true);
   };
 
   const openEditSocialModal = (social) => {
     setEditingSocial(social);
-    setSocialForm({ ...social });
+    const resolvedIconName =
+      (typeof social.iconName === "string" && social.iconName) ||
+      (typeof social.icon === "string" && social.icon) ||
+      (typeof social.platform === "string" && social.platform.toLowerCase()) ||
+      "globe";
+    setSocialForm({
+      platform: social.platform || social.name || "",
+      url: social.url || "",
+      username: social.username || social.handle || "",
+      icon: resolvedIconName,
+      iconName: resolvedIconName,
+    });
     setIsSocialModalOpen(true);
   };
 
@@ -619,11 +637,18 @@ export default function AdminPage() {
       showToast("Platform and URL are required", "error");
       return;
     }
+    const iconId = (socialForm.iconName || socialForm.icon || socialForm.platform || "globe").toLowerCase();
+    const finalSocial = {
+      ...socialForm,
+      name: socialForm.platform,
+      icon: iconId,
+      iconName: iconId,
+    };
     if (editingSocial) {
-      updateSocialLink(editingSocial.id, socialForm);
+      updateSocialLink(editingSocial.id, finalSocial);
       showToast(`Updated ${socialForm.platform} link!`);
     } else {
-      addSocialLink(socialForm);
+      addSocialLink(finalSocial);
       showToast(`Added ${socialForm.platform} link!`);
     }
     setIsSocialModalOpen(false);

@@ -8,8 +8,9 @@ import ContactForm from "../components/ContactForm";
 import SectionHeading from "../components/SectionHeading";
 import DecorativeCurves from "../components/DecorativeCurves";
 import { usePortfolioData } from "../context/PortfolioDataContext";
-import { Mail, MapPin, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
-import { GithubIcon, LinkedinIcon } from "../components/icons";
+import { Phone, Mail, MapPin, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { GithubIcon } from "../components/icons";
+import { resolveSocialIcon } from "../utils/iconMap";
 import { gsap, ScrollTrigger } from "../utils/gsapAnimations";
 
 export default function HomePage() {
@@ -34,20 +35,12 @@ export default function HomePage() {
       : safeProjects.slice(0, 4);
 
   const emailVal = personalInfo?.email || "";
+  const phoneVal = personalInfo?.phone || "";
   const locVal = personalInfo?.location || "";
   const ghVal = personalInfo?.github || "https://github.com/khustar04";
-  const liVal = personalInfo?.linkedin || "https://www.linkedin.com/in/khustarhussain04/";
 
-  const contactItems = [
-    {
-      id: "email",
-      label: "Email",
-      value: emailVal,
-      href: emailVal ? `mailto:${emailVal}` : null,
-      icon: Mail,
-      isExternal: false,
-    },
-    {
+  const baseContactItems = [
+    locVal && {
       id: "location",
       label: "Location",
       value: locVal,
@@ -55,23 +48,34 @@ export default function HomePage() {
       icon: MapPin,
       isExternal: false,
     },
-    {
-      id: "github",
-      label: "GitHub",
-      value: "khustar04",
-      href: ghVal,
-      icon: GithubIcon,
-      isExternal: true,
+    phoneVal && {
+      id: "phone",
+      label: "Phone",
+      value: phoneVal,
+      href: `tel:${phoneVal.replace(/[^0-9+]/g, "")}`,
+      icon: Phone,
+      isExternal: false,
     },
-    {
-      id: "linkedin",
-      label: "LinkedIn",
-      value: "khustarhussain04",
-      href: liVal,
-      icon: LinkedinIcon,
-      isExternal: true,
+    emailVal && {
+      id: "email",
+      label: "Email",
+      value: emailVal,
+      href: `mailto:${emailVal}`,
+      icon: Mail,
+      isExternal: false,
     },
-  ];
+  ].filter(Boolean);
+
+  const dynamicSocialItems = (socialLinks || []).map((s) => ({
+    id: s.id,
+    label: s.platform || s.name || "Social",
+    value: s.username || s.handle || s.platform || "Visit Profile",
+    href: s.url,
+    icon: resolveSocialIcon(s),
+    isExternal: true,
+  }));
+
+  const allContactItems = [...baseContactItems, ...dynamicSocialItems];
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -313,9 +317,9 @@ export default function HomePage() {
             subtitle="Have a project idea, question, or opportunity? Send me a message below!"
           />
 
-          {/* Symmetrical 2x2 / 4-Col Grid of Contact Pills */}
+          {/* Dynamic Grid of Contact & Social Media Pills */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-10">
-            {contactItems.map((item) => {
+            {allContactItems.map((item) => {
               const Icon = item.icon;
               const content = (
                 <div className="w-full h-12 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-center gap-3 shadow-xs hover:border-blue-500 dark:hover:border-blue-400 hover:shadow-md transition-all duration-200 group">

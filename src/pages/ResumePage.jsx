@@ -2,10 +2,10 @@ import { Download, Mail, Phone, MapPin, Award, ExternalLink } from "lucide-react
 import Button from "../components/Button";
 import DecorativeCurves from "../components/DecorativeCurves";
 import { usePortfolioData } from "../context/PortfolioDataContext";
-import { GithubIcon, LinkedinIcon } from "../components/icons";
+import { resolveSocialIcon } from "../utils/iconMap";
 
 export default function ResumePage() {
-  const { personalInfo, skills, projects, certifications, education } = usePortfolioData();
+  const { personalInfo, skills, projects, certifications, education, socialLinks } = usePortfolioData();
 
   const name = personalInfo?.name || "Khustar Hussain";
   const titles = Array.isArray(personalInfo?.titles)
@@ -16,8 +16,6 @@ export default function ResumePage() {
   const location = personalInfo?.location || "";
   const phone = personalInfo?.phone || "";
   const email = personalInfo?.email || "";
-  const github = personalInfo?.github || "https://github.com/khustar04";
-  const linkedin = personalInfo?.linkedin || "https://www.linkedin.com/in/khustarhussain04/";
   const resumeUrl = personalInfo?.resumeUrl || "/Khustar_Hussain_Resume.pdf";
   const bio = personalInfo?.bio || "";
 
@@ -25,6 +23,7 @@ export default function ResumePage() {
   const safeProjects = Array.isArray(projects) ? projects : [];
   const safeCerts = Array.isArray(certifications) ? certifications : [];
   const safeEdu = Array.isArray(education) ? education : [];
+  const safeSocials = Array.isArray(socialLinks) ? socialLinks : [];
 
   return (
     <main className="pt-28 pb-24 relative overflow-hidden transition-colors duration-300">
@@ -40,7 +39,7 @@ export default function ResumePage() {
             {titles.join(" | ")}
           </p>
 
-          {/* Contact Details Pill Row */}
+          {/* Contact & Social Details Pill Row */}
           <div className="flex flex-wrap items-center justify-center gap-3 mb-8 text-xs md:text-sm text-gray-700 dark:text-gray-300">
             {location && (
               <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-full border border-gray-200 dark:border-slate-700">
@@ -69,29 +68,22 @@ export default function ResumePage() {
               </a>
             )}
 
-            {github && (
-              <a
-                href={github}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-full border border-gray-200 dark:border-slate-700 hover:border-blue-500 hover:text-blue-600 transition-colors"
-              >
-                <GithubIcon size={14} className="text-blue-600 dark:text-blue-400" />
-                <span>GitHub</span>
-              </a>
-            )}
-
-            {linkedin && (
-              <a
-                href={linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-full border border-gray-200 dark:border-slate-700 hover:border-blue-500 hover:text-blue-600 transition-colors"
-              >
-                <LinkedinIcon size={14} className="text-blue-600 dark:text-blue-400" />
-                <span>LinkedIn</span>
-              </a>
-            )}
+            {/* Dynamic Social Links */}
+            {safeSocials.map((link) => {
+              const SocialIcon = resolveSocialIcon(link);
+              return (
+                <a
+                  key={link.id}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-full border border-gray-200 dark:border-slate-700 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  <SocialIcon size={14} className="text-blue-600 dark:text-blue-400" />
+                  <span>{link.username || link.name || link.platform || "Link"}</span>
+                </a>
+              );
+            })}
           </div>
 
           <div className="flex justify-center">

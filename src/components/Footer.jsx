@@ -41,7 +41,6 @@ export default function Footer() {
                 { name: "Resume", path: "/resume" },
                 { name: "Projects", path: "/#projects" },
                 { name: "Contact", path: "/#contact" },
-                { name: "Admin Portal", path: "/manage-portfolio" },
               ].map((link) => (
                 <li key={link.name}>
                   <Link
