@@ -25,6 +25,8 @@ import {
   RotateCcw,
   X,
   Sparkles,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { usePortfolioData } from "../context/PortfolioDataContext";
 import { compressImageFile } from "../utils/imageCompressor";
@@ -62,7 +64,8 @@ export default function AdminPage() {
     exportDataJSON,
     importDataJSON,
     cloudStatus,
-    saveCloudCredentials,
+    connectAndSyncCloud,
+    syncNowToCloud,
     uploadImageFile,
   } = usePortfolioData();
 
@@ -607,17 +610,42 @@ export default function AdminPage() {
   const [supabaseKeyInput, setSupabaseKeyInput] = useState(() => cloudStatus?.key || "");
   const importFileRef = useRef(null);
 
-  const handleSaveCloudConfig = (e) => {
+  const [isConnectingCloud, setIsConnectingCloud] = useState(false);
+
+  const handleSaveCloudConfig = async (e) => {
     e.preventDefault();
     if (!supabaseUrlInput.trim() || !supabaseKeyInput.trim()) {
       showToast("Please provide both Supabase URL and Anon Key", "error");
       return;
     }
-    const res = saveCloudCredentials(supabaseUrlInput, supabaseKeyInput);
-    if (res.isConfigured) {
-      showToast("Supabase connected! Live sync active across all devices.");
-    } else {
-      showToast("Invalid URL format. Make sure it starts with https://", "error");
+    setIsConnectingCloud(true);
+    try {
+      const res = await connectAndSyncCloud(supabaseUrlInput, supabaseKeyInput);
+      if (res.success) {
+        showToast(res.message || "Supabase connected! All data synced across all devices.");
+      } else {
+        showToast(res.message || "Connection failed. Please check credentials.", "error");
+      }
+    } catch (err) {
+      showToast(`Connection error: ${err.message}`, "error");
+    } finally {
+      setIsConnectingCloud(false);
+    }
+  };
+
+  const handleManualSync = async () => {
+    setIsConnectingCloud(true);
+    try {
+      const res = await syncNowToCloud();
+      if (res.success) {
+        showToast("Live data pushed to Supabase Cloud successfully!");
+      } else {
+        showToast(`Sync failed: ${res.message}`, "error");
+      }
+    } catch (err) {
+      showToast(`Sync error: ${err.message}`, "error");
+    } finally {
+      setIsConnectingCloud(false);
     }
   };
 
@@ -1596,20 +1624,41 @@ export default function AdminPage() {
                       className="w-full px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <button
                       type="submit"
-                      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
+                      disabled={isConnectingCloud}
+                      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-500/20 cursor-pointer flex items-center gap-2"
                     >
-                      Connect & Sync Cloud
+                      {isConnectingCloud ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Testing & Syncing...</span>
+                        </>
+                      ) : (
+                        <span>Connect & Sync Cloud</span>
+                      )}
                     </button>
+
+                    {cloudStatus?.isConfigured && (
+                      <button
+                        type="button"
+                        onClick={handleManualSync}
+                        disabled={isConnectingCloud}
+                        className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-blue-500/20 cursor-pointer flex items-center gap-1.5"
+                      >
+                        <RefreshCw size={14} className={isConnectingCloud ? "animate-spin" : ""} />
+                        <span>Force Sync to Cloud</span>
+                      </button>
+                    )}
+
                     <a
                       href="https://supabase.com/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                     >
-                      <span>Create Free Supabase Project</span>
+                      <span>Supabase Dashboard</span>
                       <ExternalLink size={12} />
                     </a>
                   </div>

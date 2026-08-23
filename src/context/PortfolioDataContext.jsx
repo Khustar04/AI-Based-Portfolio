@@ -10,6 +10,7 @@ import {
   saveCloudPortfolio,
   getSupabaseCredentials,
   uploadImageToSupabase,
+  testAndSyncSupabase,
 } from "../utils/supabaseClient";
 
 const PortfolioDataContext = createContext(null);
@@ -138,13 +139,31 @@ export function PortfolioDataProvider({ children }) {
     hydrateFromCloud();
   }, []);
 
-  // Save credentials helper for Admin Panel
-  const saveCloudCredentials = (url, key) => {
-    localStorage.setItem("portfolio_supabase_url", url.trim());
-    localStorage.setItem("portfolio_supabase_key", key.trim());
-    const creds = getSupabaseCredentials();
-    setCloudStatus(creds);
-    return creds;
+  // Save and test credentials helper for Admin Panel
+  const connectAndSyncCloud = async (url, key) => {
+    const currentPayload = {
+      personalInfo,
+      projects,
+      skills,
+      certifications,
+      education,
+      socialLinks,
+    };
+    const res = await testAndSyncSupabase(url, key, currentPayload);
+    setCloudStatus(getSupabaseCredentials());
+    return res;
+  };
+
+  const syncNowToCloud = async () => {
+    const currentPayload = {
+      personalInfo,
+      projects,
+      skills,
+      certifications,
+      education,
+      socialLinks,
+    };
+    return await saveCloudPortfolio(currentPayload);
   };
 
   // Upload image helper with cloud priority
@@ -517,7 +536,8 @@ export function PortfolioDataProvider({ children }) {
 
         // Cloud & Image Storage
         cloudStatus,
-        saveCloudCredentials,
+        connectAndSyncCloud,
+        syncNowToCloud,
         uploadImageFile,
 
         // Utilities
