@@ -17,8 +17,24 @@ import {
   Cloud,
   FolderGit2,
   Mail,
+  Phone,
+  Send,
+  MessageSquare,
 } from "lucide-react";
-import { GithubIcon, LinkedinIcon } from "../components/icons";
+import {
+  GithubIcon,
+  LinkedinIcon,
+  InstagramIcon,
+  FacebookIcon,
+  TelegramIcon,
+  RedditIcon,
+  MediumIcon,
+  TwitterXIcon,
+  YouTubeIcon,
+  DiscordIcon,
+  LeetCodeIcon,
+  HackerRankIcon,
+} from "../components/icons";
 
 export const SKILL_ICON_MAP = {
   Code,
@@ -38,6 +54,44 @@ export const SKILL_ICON_MAP = {
   Smartphone,
   Cloud,
   FolderGit2,
+};
+
+export const SOCIAL_ICON_OPTIONS = [
+  { id: "github", label: "GitHub", icon: GithubIcon, defaultBaseUrl: "https://github.com/" },
+  { id: "linkedin", label: "LinkedIn", icon: LinkedinIcon, defaultBaseUrl: "https://linkedin.com/in/" },
+  { id: "instagram", label: "Instagram", icon: InstagramIcon, defaultBaseUrl: "https://instagram.com/" },
+  { id: "facebook", label: "Facebook", icon: FacebookIcon, defaultBaseUrl: "https://facebook.com/" },
+  { id: "telegram", label: "Telegram", icon: TelegramIcon, defaultBaseUrl: "https://t.me/" },
+  { id: "reddit", label: "Reddit", icon: RedditIcon, defaultBaseUrl: "https://reddit.com/user/" },
+  { id: "medium", label: "Medium", icon: MediumIcon, defaultBaseUrl: "https://medium.com/@" },
+  { id: "twitter", label: "Twitter / X", icon: TwitterXIcon, defaultBaseUrl: "https://x.com/" },
+  { id: "youtube", label: "YouTube", icon: YouTubeIcon, defaultBaseUrl: "https://youtube.com/@" },
+  { id: "discord", label: "Discord", icon: DiscordIcon, defaultBaseUrl: "https://discord.gg/" },
+  { id: "leetcode", label: "LeetCode", icon: LeetCodeIcon, defaultBaseUrl: "https://leetcode.com/" },
+  { id: "hackerrank", label: "HackerRank", icon: HackerRankIcon, defaultBaseUrl: "https://hackerrank.com/" },
+  { id: "mail", label: "Email", icon: Mail, defaultBaseUrl: "mailto:" },
+  { id: "website", label: "Website / Portfolio", icon: Globe, defaultBaseUrl: "https://" },
+];
+
+export const SOCIAL_ICON_MAP = {
+  github: GithubIcon,
+  linkedin: LinkedinIcon,
+  instagram: InstagramIcon,
+  facebook: FacebookIcon,
+  telegram: TelegramIcon,
+  reddit: RedditIcon,
+  medium: MediumIcon,
+  twitter: TwitterXIcon,
+  x: TwitterXIcon,
+  youtube: YouTubeIcon,
+  discord: DiscordIcon,
+  leetcode: LeetCodeIcon,
+  hackerrank: HackerRankIcon,
+  mail: Mail,
+  email: Mail,
+  phone: Phone,
+  website: Globe,
+  globe: Globe,
 };
 
 export function resolveSkillIcon(skill) {
@@ -85,12 +139,28 @@ export function resolveSocialIcon(link) {
     return link.icon;
   }
 
-  const name = ((link.platform || "") + " " + (link.name || "") + " " + (link.id || "")).toLowerCase();
+  const iconName = (link.iconName || link.icon || "").toLowerCase();
+  if (iconName && SOCIAL_ICON_MAP[iconName]) {
+    return SOCIAL_ICON_MAP[iconName];
+  }
+
+  const platform = ((link.platform || "") + " " + (link.name || "") + " " + (link.id || "")).toLowerCase();
   const url = (link.url || "").toLowerCase();
 
-  if (name.includes("github") || url.includes("github.com")) return GithubIcon;
-  if (name.includes("linkedin") || url.includes("linkedin.com")) return LinkedinIcon;
-  if (name.includes("mail") || name.includes("email") || url.includes("mailto:")) return Mail;
+  if (platform.includes("github") || url.includes("github.com")) return GithubIcon;
+  if (platform.includes("linkedin") || url.includes("linkedin.com")) return LinkedinIcon;
+  if (platform.includes("instagram") || url.includes("instagram.com")) return InstagramIcon;
+  if (platform.includes("facebook") || url.includes("facebook.com") || url.includes("fb.me")) return FacebookIcon;
+  if (platform.includes("telegram") || url.includes("t.me") || url.includes("telegram.me")) return TelegramIcon;
+  if (platform.includes("reddit") || url.includes("reddit.com")) return RedditIcon;
+  if (platform.includes("medium") || url.includes("medium.com")) return MediumIcon;
+  if (platform.includes("twitter") || platform.includes("x.com") || url.includes("twitter.com") || url.includes("x.com")) return TwitterXIcon;
+  if (platform.includes("youtube") || url.includes("youtube.com") || url.includes("youtu.be")) return YouTubeIcon;
+  if (platform.includes("discord") || url.includes("discord.gg") || url.includes("discord.com")) return DiscordIcon;
+  if (platform.includes("leetcode") || url.includes("leetcode.com")) return LeetCodeIcon;
+  if (platform.includes("hackerrank") || url.includes("hackerrank.com")) return HackerRankIcon;
+  if (platform.includes("mail") || platform.includes("email") || url.includes("mailto:")) return Mail;
+  if (platform.includes("phone") || url.includes("tel:")) return Phone;
 
   return Globe;
 }

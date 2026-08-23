@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { usePortfolioData } from "../context/PortfolioDataContext";
 import { compressImageFile } from "../utils/imageCompressor";
-import { SKILL_ICON_MAP } from "../utils/iconMap";
+import { SKILL_ICON_MAP, SOCIAL_ICON_OPTIONS, resolveSocialIcon } from "../utils/iconMap";
 
 export default function AdminPage() {
   const {
@@ -908,6 +908,7 @@ export default function AdminPage() {
         <div className="border-b border-slate-200 dark:border-slate-700/80 px-6 py-4 flex items-center gap-2 overflow-x-auto scrollbar-none">
           {[
             { id: "profile", label: "Profile & Bio", icon: User },
+            { id: "resume", label: "Edit Resume Page", icon: FileText },
             { id: "projects", label: "Projects", icon: FolderGit2, count: (projects || []).length },
             { id: "skills", label: "Skills", icon: Wrench, count: (skills || []).length },
             { id: "certifications", label: "Certificates", icon: Award, count: (certifications || []).length },
@@ -1222,6 +1223,329 @@ export default function AdminPage() {
                 </button>
               </div>
             </form>
+          )}
+
+          {/* ========================================================= */}
+          {/* TAB: EDIT RESUME PAGE */}
+          {/* ========================================================= */}
+          {activeTab === "resume" && (
+            <div className="space-y-8 max-w-4xl animate-smooth-fade">
+              {/* Header Preview & Live Link Banner */}
+              <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-slate-900 text-white p-6 md:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 border border-white/15">
+                <div>
+                  <span className="px-3 py-1 bg-white/20 text-white rounded-full text-xs font-bold uppercase tracking-wider mb-2 inline-block">
+                    📄 Live Resume Page Editor
+                  </span>
+                  <h2 className="text-xl md:text-2xl font-black">
+                    Customize Your Public Resume Page
+                  </h2>
+                  <p className="text-xs md:text-sm text-blue-100 mt-1 max-w-xl">
+                    Control every detail on your public <code>/resume</code> route, update your resume PDF file, and manage professional summary and contacts.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Link
+                    to="/resume"
+                    target="_blank"
+                    className="px-5 py-2.5 bg-white text-blue-700 hover:bg-blue-50 font-bold text-xs md:text-sm rounded-xl transition-all shadow-md flex items-center gap-2"
+                  >
+                    <span>View Live Resume</span>
+                    <ExternalLink size={15} />
+                  </Link>
+                </div>
+              </div>
+
+              {/* PDF Document Cloud Upload Card */}
+              <div className="bg-slate-50 dark:bg-slate-800/40 p-6 md:p-7 rounded-3xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                      <FileText size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                        Upload & Update Resume Document (PDF)
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Upload your PDF file to replace the old resume globally in Supabase Cloud Storage.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl cursor-pointer flex items-center gap-2 transition-all shadow-md shadow-blue-500/20">
+                      {isUploadingResume ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={14} />
+                          <span>Upload New PDF</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        disabled={isUploadingResume}
+                        onChange={handleResumeUpload}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {personalInfo?.resumeUrl && (
+                      <a
+                        href={personalInfo.resumeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download="Khustar_Hussain_Resume.pdf"
+                        className="px-3.5 py-2.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-500 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                      >
+                        <Download size={14} />
+                        <span>Download Active PDF</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 flex items-center gap-1.5">
+                  <CheckCircle size={14} className="text-emerald-500 shrink-0" />
+                  <span>
+                    Active resume link: <code className="text-blue-600 dark:text-blue-400 text-[11px] break-all">{personalInfo?.resumeUrl || "/Khustar_Hussain_Resume.pdf"}</code>
+                  </span>
+                </p>
+              </div>
+
+              {/* Resume Header & Profile Information Form */}
+              <form onSubmit={handleProfileSave} className="space-y-6 bg-white dark:bg-slate-800/30 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-700/80 shadow-xs">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      Resume Header & Profile Details
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Edit the display name, professional titles, and summary that appear on your resume page.
+                    </p>
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs md:text-sm rounded-xl transition-all shadow-md shadow-blue-500/20 flex items-center gap-2 cursor-pointer"
+                  >
+                    <Save size={16} />
+                    <span>Save Resume Info</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Full Name on Resume *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={profileForm.name}
+                      onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      value={profileForm.location}
+                      onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
+                      placeholder="e.g. Bhopal, Madhya Pradesh, India"
+                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={profileForm.email}
+                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      value={profileForm.phone}
+                      onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      GitHub Profile URL
+                    </label>
+                    <input
+                      type="text"
+                      value={profileForm.github}
+                      onChange={(e) => setProfileForm({ ...profileForm, github: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      LinkedIn Profile URL
+                    </label>
+                    <input
+                      type="text"
+                      value={profileForm.linkedin}
+                      onChange={(e) => setProfileForm({ ...profileForm, linkedin: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Professional Titles on Resume */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Professional Titles (Subtitle on Resume)
+                  </label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {(profileForm.titles || []).map((t, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-xl border border-blue-200 dark:border-blue-800"
+                      >
+                        <span>{t}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTitle(idx)}
+                          className="hover:text-red-500 cursor-pointer"
+                        >
+                          <X size={13} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newTitleInput}
+                      onChange={(e) => setNewTitleInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddTitle();
+                        }
+                      }}
+                      placeholder="e.g. Java Backend Developer, Spring Boot Engineer..."
+                      className="flex-1 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddTitle}
+                      className="px-4 py-2 bg-slate-800 dark:bg-slate-700 text-white text-xs font-bold rounded-xl hover:bg-slate-900 cursor-pointer"
+                    >
+                      Add Title
+                    </button>
+                  </div>
+                </div>
+
+                {/* Professional Summary / Bio */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Professional Summary (Appears under SUMMARY section on Resume)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={profileForm.bio}
+                    onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                    placeholder="Write a concise executive summary of your backend expertise, passion for building scalable web apps, and problem-solving skills..."
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              </form>
+
+              {/* Resume Dynamic Sections Quick Hub */}
+              <div className="bg-slate-50 dark:bg-slate-800/40 p-6 rounded-3xl border border-slate-200 dark:border-slate-700/80">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
+                  Resume Content Sections
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                  These dynamic sections are automatically synced with your Resume page. Click any card to edit its records:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("skills")}
+                    className="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-all text-left shadow-xs cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <Wrench size={18} className="text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                      <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-[10px] font-bold rounded-full">
+                        {(skills || []).length} Categories
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">Technical Skills</p>
+                    <p className="text-[11px] text-slate-400">Manage categories & tags</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("projects")}
+                    className="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-all text-left shadow-xs cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <FolderGit2 size={18} className="text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                      <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-[10px] font-bold rounded-full">
+                        {(projects || []).length} Projects
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">Featured Projects</p>
+                    <p className="text-[11px] text-slate-400">Streakify, BrightPath...</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("certifications")}
+                    className="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-all text-left shadow-xs cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <Award size={18} className="text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                      <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-[10px] font-bold rounded-full">
+                        {(certifications || []).length} Certs
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">Certifications</p>
+                    <p className="text-[11px] text-slate-400">AWS, HackerRank...</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("education")}
+                    className="p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 transition-all text-left shadow-xs cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <GraduationCap size={18} className="text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                      <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-[10px] font-bold rounded-full">
+                        {(education || []).length} Records
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">Education</p>
+                    <p className="text-[11px] text-slate-400">B.Tech & College info</p>
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* ========================================================= */}
@@ -1597,48 +1921,56 @@ export default function AdminPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {(socialLinks || []).map((social) => (
-                  <div
-                    key={social.id}
-                    className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs uppercase font-bold text-slate-400">
-                        {social.platform}
-                      </p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                        {social.username || social.platform}
-                      </p>
-                      <a
-                        href={social.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline truncate block"
-                      >
-                        {social.url}
-                      </a>
+                {(socialLinks || []).map((social) => {
+                  const SocialIcon = resolveSocialIcon(social);
+                  return (
+                    <div
+                      key={social.id}
+                      className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3 group hover:border-blue-500 transition-all"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-slate-700/60 border border-blue-100 dark:border-slate-600 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                          <SocialIcon size={20} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] uppercase font-extrabold tracking-wider text-blue-600 dark:text-blue-400">
+                            {social.platform}
+                          </p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                            {social.username || social.platform}
+                          </p>
+                          <a
+                            href={social.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 truncate block"
+                          >
+                            {social.url}
+                          </a>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => openEditSocialModal(social)}
+                          className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg cursor-pointer"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Delete ${social.platform} link?`)) {
+                              deleteSocialLink(social.id);
+                              showToast("Social link deleted!");
+                            }
+                          }}
+                          className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => openEditSocialModal(social)}
-                        className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg cursor-pointer"
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Delete ${social.platform} link?`)) {
-                            deleteSocialLink(social.id);
-                            showToast("Social link deleted!");
-                          }
-                        }}
-                        className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg cursor-pointer"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2660,6 +2992,46 @@ export default function AdminPage() {
             </div>
 
             <form onSubmit={handleSocialSave} className="space-y-4">
+              {/* Quick Platform Icon Picker */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                  Select Platform & Icon
+                </label>
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5 max-h-36 overflow-y-auto p-1 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/80">
+                  {SOCIAL_ICON_OPTIONS.map((item) => {
+                    const OptionIcon = item.icon;
+                    const isSelected =
+                      socialForm.icon === item.id ||
+                      socialForm.platform?.toLowerCase() === item.label.toLowerCase() ||
+                      socialForm.platform?.toLowerCase() === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setSocialForm((prev) => ({
+                            ...prev,
+                            platform: item.label,
+                            icon: item.id,
+                            iconName: item.id,
+                            url: prev.url && prev.url !== "https://" ? prev.url : item.defaultBaseUrl,
+                          }));
+                        }}
+                        className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                            : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-slate-700"
+                        }`}
+                        title={item.label}
+                      >
+                        <OptionIcon size={18} />
+                        <span className="text-[9px] font-bold truncate w-full text-center">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                   Platform Name *
@@ -2671,7 +3043,7 @@ export default function AdminPage() {
                   onChange={(e) =>
                     setSocialForm({ ...socialForm, platform: e.target.value })
                   }
-                  placeholder="e.g. GitHub, LinkedIn, Twitter, Discord..."
+                  placeholder="e.g. GitHub, LinkedIn, Instagram, Telegram, Medium..."
                   className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
