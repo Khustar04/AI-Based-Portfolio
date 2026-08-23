@@ -600,6 +600,9 @@ export default function AdminPage() {
     username: "",
     icon: "instagram",
     iconName: "instagram",
+    showInFooter: true,
+    showInResume: true,
+    showInContact: true,
   });
 
   const openNewSocialModal = () => {
@@ -610,6 +613,9 @@ export default function AdminPage() {
       username: "",
       icon: "instagram",
       iconName: "instagram",
+      showInFooter: true,
+      showInResume: true,
+      showInContact: true,
     });
     setIsSocialModalOpen(true);
   };
@@ -628,6 +634,9 @@ export default function AdminPage() {
       username: social.username || social.handle || "",
       icon: resolvedIconName,
       iconName: resolvedIconName,
+      showInFooter: social.showInFooter !== false,
+      showInResume: social.showInResume !== false,
+      showInContact: social.showInContact !== false,
     });
     setIsSocialModalOpen(true);
   };
@@ -646,6 +655,9 @@ export default function AdminPage() {
       name: socialForm.platform,
       icon: iconId,
       iconName: iconId,
+      showInFooter: socialForm.showInFooter !== false,
+      showInResume: socialForm.showInResume !== false,
+      showInContact: socialForm.showInContact !== false,
     };
     if (editingSocial) {
       updateSocialLink(targetId, finalSocial);
@@ -1976,6 +1988,23 @@ export default function AdminPage() {
                           >
                             {social.url}
                           </a>
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {social.showInFooter !== false && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 rounded">
+                                Footer
+                              </span>
+                            )}
+                            {social.showInResume !== false && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 rounded">
+                                Resume
+                              </span>
+                            )}
+                            {social.showInContact !== false && (
+                              <span className="px-1.5 py-0.5 text-[9px] font-bold bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 rounded">
+                                Contact
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
@@ -3105,6 +3134,65 @@ export default function AdminPage() {
                   placeholder="e.g. khustar04"
                   className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
+              </div>
+
+              {/* Display Locations Checkboxes */}
+              <div className="pt-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                  Display In Sections (Choose where this link appears)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-blue-500 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={socialForm.showInFooter !== false}
+                      onChange={(e) =>
+                        setSocialForm((prev) => ({
+                          ...prev,
+                          showInFooter: e.target.checked,
+                        }))
+                      }
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      Footer Section
+                    </span>
+                  </label>
+
+                  <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-blue-500 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={socialForm.showInResume !== false}
+                      onChange={(e) =>
+                        setSocialForm((prev) => ({
+                          ...prev,
+                          showInResume: e.target.checked,
+                        }))
+                      }
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      Resume Page
+                    </span>
+                  </label>
+
+                  <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-blue-500 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={socialForm.showInContact !== false}
+                      onChange={(e) =>
+                        setSocialForm((prev) => ({
+                          ...prev,
+                          showInContact: e.target.checked,
+                        }))
+                      }
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      Contact Section
+                    </span>
+                  </label>
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">

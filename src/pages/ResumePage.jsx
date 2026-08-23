@@ -69,7 +69,15 @@ export default function ResumePage() {
             )}
 
             {/* Dynamic Social Links */}
-            {safeSocials.map((link) => {
+            {safeSocials
+              .filter((link) => {
+                if (link.showInResume === false) return false;
+                if (email && (link.platform?.toLowerCase() === "email" || link.url?.toLowerCase().includes(`mailto:${email.toLowerCase()}`))) {
+                  return false;
+                }
+                return true;
+              })
+              .map((link) => {
               const SocialIcon = resolveSocialIcon(link);
               return (
                 <a

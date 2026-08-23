@@ -66,14 +66,23 @@ export default function HomePage() {
     },
   ].filter(Boolean);
 
-  const dynamicSocialItems = (socialLinks || []).map((s) => ({
-    id: s.id,
-    label: s.platform || s.name || "Social",
-    value: s.username || s.handle || s.platform || "Visit Profile",
-    href: s.url,
-    icon: resolveSocialIcon(s),
-    isExternal: true,
-  }));
+  const dynamicSocialItems = (socialLinks || [])
+    .filter((s) => {
+      if (s.showInContact === false) return false;
+      // Prevent duplicate email card if emailVal is already present
+      if (emailVal && (s.platform?.toLowerCase() === "email" || s.url?.toLowerCase().includes(`mailto:${emailVal.toLowerCase()}`))) {
+        return false;
+      }
+      return true;
+    })
+    .map((s) => ({
+      id: s.id,
+      label: s.platform || s.name || "Social",
+      value: s.username || s.handle || s.platform || "Visit Profile",
+      href: s.url,
+      icon: resolveSocialIcon(s),
+      isExternal: true,
+    }));
 
   const allContactItems = [...baseContactItems, ...dynamicSocialItems];
 

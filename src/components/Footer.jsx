@@ -67,8 +67,10 @@ export default function Footer() {
             </div>
 
             <div className="flex flex-wrap gap-2.5">
-              {socialLinks.map((link) => {
-                const IconComponent = resolveSocialIcon(link);
+              {(socialLinks || [])
+                .filter((link) => link.showInFooter !== false)
+                .map((link) => {
+                  const IconComponent = resolveSocialIcon(link);
 
                 return (
                   <a
