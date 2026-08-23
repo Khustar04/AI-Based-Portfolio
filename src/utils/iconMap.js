@@ -164,3 +164,53 @@ export function resolveSocialIcon(link) {
 
   return Globe;
 }
+
+/**
+ * Normalizes any social link, email, or phone number to prevent 404 relative routing.
+ */
+export function formatSocialHref(rawUrl = "", platform = "") {
+  if (!rawUrl) return "#";
+  const trimmed = String(rawUrl).trim();
+  const lowerPlat = (platform || "").toLowerCase();
+  const lowerUrl = trimmed.toLowerCase();
+
+  // 1. Email check
+  if (
+    lowerPlat.includes("mail") ||
+    lowerPlat.includes("email") ||
+    lowerUrl.startsWith("mailto:") ||
+    (trimmed.includes("@") && !trimmed.includes("/") && !lowerUrl.startsWith("http"))
+  ) {
+    const cleanEmail = trimmed.replace(/^mailto:/i, "").trim();
+    return `mailto:${cleanEmail}`;
+  }
+
+  // 2. Phone check
+  if (
+    lowerPlat.includes("phone") ||
+    lowerUrl.startsWith("tel:") ||
+    (/^[\d\s+\-()]+$/.test(trimmed) && trimmed.length >= 7)
+  ) {
+    const cleanPhone = trimmed.replace(/^tel:/i, "").replace(/[^0-9+]/g, "").trim();
+    return `tel:${cleanPhone}`;
+  }
+
+  // 3. Web URL
+  if (lowerUrl.startsWith("http://") || lowerUrl.startsWith("https://")) {
+    return trimmed;
+  }
+
+  // Prepend https:// so browser doesn't route internally as relative page (which causes 404)
+  return `https://${trimmed}`;
+}
+
+/**
+ * Checks if link should open in a new tab (false for mailto: and tel: to prevent blank tabs)
+ */
+export function isBlankTarget(href = "") {
+  const lower = String(href || "").toLowerCase();
+  if (lower.startsWith("mailto:") || lower.startsWith("tel:") || lower === "#") {
+    return false;
+  }
+  return true;
+}

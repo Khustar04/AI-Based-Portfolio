@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { MapPin, Heart } from "lucide-react";
 import { usePortfolioData } from "../context/PortfolioDataContext";
-import { resolveSocialIcon } from "../utils/iconMap";
+import { resolveSocialIcon, formatSocialHref, isBlankTarget } from "../utils/iconMap";
 import DecorativeCurves from "./DecorativeCurves";
 
 export default function Footer() {
@@ -18,15 +18,18 @@ export default function Footer() {
           <div>
             <Link
               to="/"
-              className="text-xl font-extrabold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2 mb-3"
+              className="text-xl font-black tracking-tight text-white flex items-center gap-2 mb-3"
             >
-              <span className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-sm font-bold text-white">
-                {personalInfo.initials}
+              <span className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-sm font-bold shadow-md shadow-blue-500/25">
+                {personalInfo.name.charAt(0)}
               </span>
               <span>{personalInfo.name}</span>
             </Link>
-            <p className="text-gray-400 text-xs leading-relaxed max-w-xs">
-              {personalInfo.shortBio}
+            <p className="text-gray-400 text-xs leading-relaxed max-w-sm">
+              {Array.isArray(personalInfo.titles)
+                ? personalInfo.titles.join(" | ")
+                : personalInfo.titles}
+              . Building scalable backends, reliable APIs, and modern responsive applications.
             </p>
           </div>
 
@@ -71,20 +74,22 @@ export default function Footer() {
                 .filter((link) => link.showInFooter !== false)
                 .map((link) => {
                   const IconComponent = resolveSocialIcon(link);
+                  const href = formatSocialHref(link.url, link.platform);
+                  const isBlank = isBlankTarget(href);
 
-                return (
-                  <a
-                    key={link.id}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-center text-gray-300 hover:text-blue-400 hover:bg-white/20 hover:border-blue-400/50 transition-all shadow-sm"
-                    aria-label={link.name || link.platform}
-                  >
-                    <IconComponent size={16} />
-                  </a>
-                );
-              })}
+                  return (
+                    <a
+                      key={link.id}
+                      href={href}
+                      target={isBlank ? "_blank" : undefined}
+                      rel={isBlank ? "noopener noreferrer" : undefined}
+                      className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-center text-gray-300 hover:text-blue-400 hover:bg-white/20 hover:border-blue-400/50 transition-all shadow-sm"
+                      aria-label={link.name || link.platform}
+                    >
+                      <IconComponent size={16} />
+                    </a>
+                  );
+                })}
             </div>
           </div>
         </div>

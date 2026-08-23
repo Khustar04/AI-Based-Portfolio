@@ -2,7 +2,7 @@ import { Download, Mail, Phone, MapPin, Award, ExternalLink } from "lucide-react
 import Button from "../components/Button";
 import DecorativeCurves from "../components/DecorativeCurves";
 import { usePortfolioData } from "../context/PortfolioDataContext";
-import { resolveSocialIcon } from "../utils/iconMap";
+import { resolveSocialIcon, formatSocialHref, isBlankTarget } from "../utils/iconMap";
 
 export default function ResumePage() {
   const { personalInfo, skills, projects, certifications, education, socialLinks } = usePortfolioData();
@@ -50,7 +50,7 @@ export default function ResumePage() {
 
             {phone && (
               <a
-                href={`tel:${phone.replace(/[^0-9+]/g, "")}`}
+                href={formatSocialHref(phone, "phone")}
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-full border border-gray-200 dark:border-slate-700 hover:border-blue-500 hover:text-blue-600 transition-colors"
               >
                 <Phone size={14} className="text-blue-600 dark:text-blue-400" />
@@ -60,7 +60,7 @@ export default function ResumePage() {
 
             {email && (
               <a
-                href={`mailto:${email}`}
+                href={formatSocialHref(email, "email")}
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-full border border-gray-200 dark:border-slate-700 hover:border-blue-500 hover:text-blue-600 transition-colors"
               >
                 <Mail size={14} className="text-blue-600 dark:text-blue-400" />
@@ -78,20 +78,23 @@ export default function ResumePage() {
                 return true;
               })
               .map((link) => {
-              const SocialIcon = resolveSocialIcon(link);
-              return (
-                <a
-                  key={link.id}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-full border border-gray-200 dark:border-slate-700 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                >
-                  <SocialIcon size={14} className="text-blue-600 dark:text-blue-400" />
-                  <span>{link.username || link.name || link.platform || "Link"}</span>
-                </a>
-              );
-            })}
+                const SocialIcon = resolveSocialIcon(link);
+                const href = formatSocialHref(link.url, link.platform);
+                const isBlank = isBlankTarget(href);
+
+                return (
+                  <a
+                    key={link.id}
+                    href={href}
+                    target={isBlank ? "_blank" : undefined}
+                    rel={isBlank ? "noopener noreferrer" : undefined}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white/80 dark:bg-slate-900/60 backdrop-blur-md rounded-full border border-gray-200 dark:border-slate-700 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    <SocialIcon size={14} className="text-blue-600 dark:text-blue-400" />
+                    <span>{link.username || link.name || link.platform || "Link"}</span>
+                  </a>
+                );
+              })}
           </div>
 
           <div className="flex justify-center">

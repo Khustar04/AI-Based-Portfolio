@@ -10,7 +10,7 @@ import DecorativeCurves from "../components/DecorativeCurves";
 import { usePortfolioData } from "../context/PortfolioDataContext";
 import { Phone, Mail, MapPin, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { GithubIcon } from "../components/icons";
-import { resolveSocialIcon } from "../utils/iconMap";
+import { resolveSocialIcon, formatSocialHref, isBlankTarget } from "../utils/iconMap";
 import { gsap, ScrollTrigger } from "../utils/gsapAnimations";
 
 export default function HomePage() {
@@ -52,7 +52,7 @@ export default function HomePage() {
       id: "phone",
       label: "Phone",
       value: phoneVal,
-      href: `tel:${phoneVal.replace(/[^0-9+]/g, "")}`,
+      href: formatSocialHref(phoneVal, "phone"),
       icon: Phone,
       isExternal: false,
     },
@@ -60,7 +60,7 @@ export default function HomePage() {
       id: "email",
       label: "Email",
       value: emailVal,
-      href: `mailto:${emailVal}`,
+      href: formatSocialHref(emailVal, "email"),
       icon: Mail,
       isExternal: false,
     },
@@ -75,14 +75,17 @@ export default function HomePage() {
       }
       return true;
     })
-    .map((s) => ({
-      id: s.id,
-      label: s.platform || s.name || "Social",
-      value: s.username || s.handle || s.platform || "Visit Profile",
-      href: s.url,
-      icon: resolveSocialIcon(s),
-      isExternal: true,
-    }));
+    .map((s) => {
+      const href = formatSocialHref(s.url, s.platform);
+      return {
+        id: s.id,
+        label: s.platform || s.name || "Social",
+        value: s.username || s.handle || s.platform || "Visit Profile",
+        href: href,
+        icon: resolveSocialIcon(s),
+        isExternal: isBlankTarget(href),
+      };
+    });
 
   const allContactItems = [...baseContactItems, ...dynamicSocialItems];
 
