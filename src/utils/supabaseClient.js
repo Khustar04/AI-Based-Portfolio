@@ -134,7 +134,7 @@ export async function fetchCloudPortfolio(customClient = null) {
 }
 
 /**
- * Save complete portfolio data snapshot to Supabase
+ * Save complete portfolio data snapshot to Supabase and broadcast live
  */
 export async function saveCloudPortfolio(payload, customClient = null) {
   const supabase = customClient || getSupabase();
@@ -154,10 +154,41 @@ export async function saveCloudPortfolio(payload, customClient = null) {
       console.warn("Cloud sync upsert error:", error.message);
       return { success: false, message: error.message };
     }
+
+    // Broadcast instant WebSocket update to all open browsers globally
+    try {
+      const broadcastChannel = supabase.channel("portfolio_live_channel");
+      await broadcastChannel.send({
+        type: "broadcast",
+        event: "portfolio_state_update",
+        payload,
+      });
+    } catch {
+      // Ignore broadcast error if connection not ready
+    }
+
     return { success: true };
   } catch (err) {
     console.warn("Could not save to Supabase cloud:", err);
     return { success: false, message: err.message };
+  }
+}
+
+/**
+ * Broadcast payload directly to all connected devices over Supabase Realtime WebSocket
+ */
+export async function broadcastCloudUpdate(payload) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+  try {
+    const broadcastChannel = supabase.channel("portfolio_live_channel");
+    await broadcastChannel.send({
+      type: "broadcast",
+      event: "portfolio_state_update",
+      payload,
+    });
+  } catch (err) {
+    console.warn("Broadcast notice:", err);
   }
 }
 

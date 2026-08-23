@@ -118,37 +118,31 @@ export function PortfolioDataProvider({ children }) {
   const [cloudStatus, setCloudStatus] = useState(() => getSupabaseCredentials());
   const initialCloudLoadedRef = useRef(false);
 
-  // Hydrate from Supabase Cloud on initial load (so all devices see latest data)
-  useEffect(() => {
-    async function hydrateFromCloud() {
-      if (initialCloudLoadedRef.current) return;
-      initialCloudLoadedRef.current = true;
+  // Helper to apply incoming cloud/broadcast payload to state
+  const applyPayloadToState = (cloudData) => {
+    if (!cloudData) return;
+    if (cloudData.personalInfo) setPersonalInfoState(cloudData.personalInfo);
+    if (Array.isArray(cloudData.projects)) setProjectsState(cloudData.projects);
+    if (Array.isArray(cloudData.skills)) setSkillsState(cloudData.skills);
+    if (Array.isArray(cloudData.certifications)) setCertificationsState(cloudData.certifications);
+    if (Array.isArray(cloudData.education)) setEducationState(cloudData.education);
+    if (Array.isArray(cloudData.socialLinks)) setSocialLinksState(cloudData.socialLinks);
+  };
 
-      try {
-        const cloudData = await fetchCloudPortfolio();
-        if (cloudData) {
-          if (cloudData.personalInfo) setPersonalInfoState(cloudData.personalInfo);
-          if (Array.isArray(cloudData.projects)) setProjectsState(cloudData.projects);
-          if (Array.isArray(cloudData.skills)) setSkillsState(cloudData.skills);
-          if (Array.isArray(cloudData.certifications)) setCertificationsState(cloudData.certifications);
-          if (Array.isArray(cloudData.education)) setEducationState(cloudData.education);
-          if (Array.isArray(cloudData.socialLinks)) setSocialLinksState(cloudData.socialLinks);
-        }
-      } catch (err) {
-        console.warn("Cloud sync hydration notice:", err);
-      }
-    }
-    hydrateFromCloud();
-  }, []);
-
-  // 1. Supabase Realtime Subscription (WebSocket for multi-device live sync)
+  // 1. Supabase Realtime WebSocket Subscription (Broadcast + Postgres changes)
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase) return;
 
     try {
-      const channel = supabase
-        .channel("portfolio_data_realtime_channel")
+      const channel = supabase.channel("portfolio_live_channel");
+
+      channel
+        .on("broadcast", { event: "portfolio_state_update" }, (msg) => {
+          if (msg?.payload) {
+            applyPayloadToState(msg.payload);
+          }
+        })
         .on(
           "postgres_changes",
           {
@@ -159,13 +153,7 @@ export function PortfolioDataProvider({ children }) {
           },
           (payload) => {
             if (payload?.new?.payload) {
-              const cloudData = payload.new.payload;
-              if (cloudData.personalInfo) setPersonalInfoState(cloudData.personalInfo);
-              if (Array.isArray(cloudData.projects)) setProjectsState(cloudData.projects);
-              if (Array.isArray(cloudData.skills)) setSkillsState(cloudData.skills);
-              if (Array.isArray(cloudData.certifications)) setCertificationsState(cloudData.certifications);
-              if (Array.isArray(cloudData.education)) setEducationState(cloudData.education);
-              if (Array.isArray(cloudData.socialLinks)) setSocialLinksState(cloudData.socialLinks);
+              applyPayloadToState(payload.new.payload);
             }
           }
         )
@@ -177,6 +165,45 @@ export function PortfolioDataProvider({ children }) {
     } catch (err) {
       console.warn("Realtime subscription note:", err);
     }
+  }, [cloudStatus?.isConfigured]);
+
+  // 2. Continuous Background Heartbeat & Focus Sync (Guarantees zero-refresh updates)
+  useEffect(() => {
+    const syncWithCloud = async () => {
+      try {
+        const cloudData = await fetchCloudPortfolio();
+        if (cloudData) {
+          applyPayloadToState(cloudData);
+        }
+      } catch (err) {
+        // Silently ignore network hiccup in background
+      }
+    };
+
+    // Initial sync
+    syncWithCloud();
+
+    // Auto-sync whenever visitor returns to or focuses the tab
+    const handleVisibility = () => {
+      if (!document.hidden) syncWithCloud();
+    };
+    const handleFocus = () => syncWithCloud();
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleFocus);
+
+    // 4-second background heartbeat poller
+    const pollInterval = setInterval(() => {
+      if (!document.hidden) {
+        syncWithCloud();
+      }
+    }, 4000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleFocus);
+      clearInterval(pollInterval);
+    };
   }, [cloudStatus?.isConfigured]);
 
   // 2. Local multi-tab real-time listener (updates other tabs on same device immediately)
@@ -327,8 +354,27 @@ export function PortfolioDataProvider({ children }) {
     saveToStorage(STORAGE_KEYS.ADMIN_AUTH, isAdminAuthenticated);
   }, [isAdminAuthenticated]);
 
-  // Debounced cloud background sync
+  // Debounced cloud background sync & local multi-tab broadcast
   useEffect(() => {
+    // 1. Instant local multi-tab broadcast
+    try {
+      if (typeof window !== "undefined" && window.BroadcastChannel) {
+        const bc = new BroadcastChannel("portfolio_state_broadcast");
+        bc.postMessage({
+          personalInfo,
+          projects,
+          skills,
+          certifications,
+          education,
+          socialLinks,
+        });
+        bc.close();
+      }
+    } catch {
+      // Ignore
+    }
+
+    // 2. Cloud DB push and global WebSocket broadcast
     const timer = setTimeout(() => {
       saveCloudPortfolio({
         personalInfo,
@@ -338,7 +384,7 @@ export function PortfolioDataProvider({ children }) {
         education,
         socialLinks,
       });
-    }, 1200);
+    }, 600);
     return () => clearTimeout(timer);
   }, [personalInfo, projects, skills, certifications, education, socialLinks]);
 
