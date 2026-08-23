@@ -117,10 +117,13 @@ export function PortfolioDataProvider({ children }) {
 
   const [cloudStatus, setCloudStatus] = useState(() => getSupabaseCredentials());
   const initialCloudLoadedRef = useRef(false);
+  const isIncomingSyncRef = useRef(false);
+  const isInitialMountRef = useRef(true);
 
-  // Helper to apply incoming cloud/broadcast payload to state
+  // Helper to apply incoming cloud/broadcast payload to state without triggering save loop
   const applyPayloadToState = (cloudData) => {
     if (!cloudData) return;
+    isIncomingSyncRef.current = true;
     if (cloudData.personalInfo) setPersonalInfoState(cloudData.personalInfo);
     if (Array.isArray(cloudData.projects)) setProjectsState(cloudData.projects);
     if (Array.isArray(cloudData.skills)) setSkillsState(cloudData.skills);
@@ -167,7 +170,7 @@ export function PortfolioDataProvider({ children }) {
     }
   }, [cloudStatus?.isConfigured]);
 
-  // 2. Continuous Background Heartbeat & Focus Sync (Guarantees zero-refresh updates)
+  // 2. Tab Focus & Visibility Cloud Hydration
   useEffect(() => {
     const syncWithCloud = async () => {
       try {
@@ -175,13 +178,16 @@ export function PortfolioDataProvider({ children }) {
         if (cloudData) {
           applyPayloadToState(cloudData);
         }
-      } catch (err) {
-        // Silently ignore network hiccup in background
+      } catch {
+        // Silently ignore network hiccup
       }
     };
 
-    // Initial sync
-    syncWithCloud();
+    // Initial sync on mount
+    if (!initialCloudLoadedRef.current) {
+      initialCloudLoadedRef.current = true;
+      syncWithCloud();
+    }
 
     // Auto-sync whenever visitor returns to or focuses the tab
     const handleVisibility = () => {
@@ -192,17 +198,9 @@ export function PortfolioDataProvider({ children }) {
     document.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("focus", handleFocus);
 
-    // 4-second background heartbeat poller
-    const pollInterval = setInterval(() => {
-      if (!document.hidden) {
-        syncWithCloud();
-      }
-    }, 4000);
-
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("focus", handleFocus);
-      clearInterval(pollInterval);
     };
   }, [cloudStatus?.isConfigured]);
 
@@ -356,6 +354,16 @@ export function PortfolioDataProvider({ children }) {
 
   // Debounced cloud background sync & local multi-tab broadcast
   useEffect(() => {
+    // Skip saving on initial render or when applying incoming sync
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (isIncomingSyncRef.current) {
+      isIncomingSyncRef.current = false;
+      return;
+    }
+
     // 1. Instant local multi-tab broadcast
     try {
       if (typeof window !== "undefined" && window.BroadcastChannel) {

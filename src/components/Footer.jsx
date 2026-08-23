@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
-import { Mail, MapPin, Heart, Globe } from "lucide-react";
+import { MapPin, Heart } from "lucide-react";
 import { usePortfolioData } from "../context/PortfolioDataContext";
-import { GithubIcon, LinkedinIcon } from "./icons";
+import { resolveSocialIcon } from "../utils/iconMap";
 import DecorativeCurves from "./DecorativeCurves";
 
 export default function Footer() {
@@ -18,55 +18,50 @@ export default function Footer() {
           <div>
             <Link
               to="/"
-              className="text-2xl font-extrabold text-blue-400 hover:text-blue-300 transition-colors inline-flex items-center gap-2 mb-3"
+              className="text-xl font-extrabold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2 mb-3"
             >
-              <span className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-sm font-bold">
+              <span className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-sm font-bold text-white">
                 {personalInfo.initials}
               </span>
               <span>{personalInfo.name}</span>
             </Link>
-            <p className="text-gray-300 text-sm leading-relaxed max-w-sm">
+            <p className="text-gray-400 text-xs leading-relaxed max-w-xs">
               {personalInfo.shortBio}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-blue-400 mb-4">
               Quick Links
-            </h4>
-            <div className="flex flex-col gap-2.5">
+            </p>
+            <ul className="space-y-2">
               {[
                 { name: "Home", path: "/" },
-                { name: "Projects", path: "/#projects" },
                 { name: "Resume", path: "/resume" },
+                { name: "Projects", path: "/#projects" },
                 { name: "Contact", path: "/#contact" },
+                { name: "Admin Portal", path: "/manage-portfolio" },
               ].map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  className="text-gray-400 hover:text-blue-400 text-sm transition-colors w-fit"
-                >
-                  {link.name}
-                </Link>
+                <li key={link.name}>
+                  <Link
+                    to={link.path}
+                    className="text-gray-400 hover:text-white text-xs transition-colors hover:translate-x-1 inline-block duration-200"
+                  >
+                    {link.name}
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          {/* Contact & Social */}
+          {/* Contact info & Socials */}
           <div>
-            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
-              Get In Touch
-            </h4>
-            <div className="space-y-3 mb-6">
-              <a
-                href={`mailto:${personalInfo.email}`}
-                className="flex items-center gap-2 text-gray-400 hover:text-blue-400 text-sm transition-colors"
-              >
-                <Mail size={14} />
-                {personalInfo.email}
-              </a>
-              <div className="flex items-center gap-2 text-gray-400 text-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-blue-400 mb-4">
+              Connect
+            </p>
+            <div className="space-y-2 text-xs text-gray-400 mb-4">
+              <div className="flex items-center gap-2">
                 <MapPin size={14} />
                 {personalInfo.location}
               </div>
@@ -74,16 +69,7 @@ export default function Footer() {
 
             <div className="flex flex-wrap gap-2.5">
               {socialLinks.map((link) => {
-                let IconComponent = Globe;
-                if (typeof link.icon === "function" || typeof link.icon === "object") {
-                  IconComponent = link.icon;
-                } else if (link.platform?.toLowerCase().includes("github") || link.name?.toLowerCase().includes("github")) {
-                  IconComponent = GithubIcon;
-                } else if (link.platform?.toLowerCase().includes("linkedin") || link.name?.toLowerCase().includes("linkedin")) {
-                  IconComponent = LinkedinIcon;
-                } else if (link.platform?.toLowerCase().includes("mail") || link.url?.includes("mailto:")) {
-                  IconComponent = Mail;
-                }
+                const IconComponent = resolveSocialIcon(link);
 
                 return (
                   <a
