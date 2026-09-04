@@ -33,9 +33,13 @@ import { usePortfolioData } from "../context/PortfolioDataContext";
 import { compressImageFile } from "../utils/imageCompressor";
 import { SKILL_ICON_MAP, SOCIAL_ICON_OPTIONS, resolveSocialIcon } from "../utils/iconMap";
 
-function getResumeFileName(url) {
+function getResumeFileName(personalInfo) {
+  if (personalInfo?.resumeFileName && personalInfo.resumeFileName.trim()) {
+    return personalInfo.resumeFileName.trim();
+  }
+  const url = personalInfo?.resumeUrl;
   if (!url) return "Khustar_Hussain_Resume.pdf";
-  if (url.startsWith("data:")) return "Uploaded_Resume.pdf";
+  if (url.startsWith("data:")) return "Khustar_Hussain_Resume.pdf";
   try {
     const cleanUrl = url.split("?")[0];
     const parts = cleanUrl.split("/");
@@ -135,6 +139,7 @@ export default function AdminPage() {
     shortBio: personalInfo?.shortBio || "",
     profilePhoto: personalInfo?.profilePhoto || "/portfolio image.jpeg",
     resumeUrl: personalInfo?.resumeUrl || "/Khustar_Hussain_Resume.pdf",
+    resumeFileName: personalInfo?.resumeFileName || "Khustar_Hussain_Resume.pdf",
     currentRole: personalInfo?.currentRole || "",
     lookingFor: personalInfo?.lookingFor || "",
     yearsOfExperience: personalInfo?.yearsOfExperience || "",
@@ -157,6 +162,7 @@ export default function AdminPage() {
         shortBio: personalInfo.shortBio || "",
         profilePhoto: personalInfo.profilePhoto || "/portfolio image.jpeg",
         resumeUrl: personalInfo.resumeUrl || "/Khustar_Hussain_Resume.pdf",
+        resumeFileName: personalInfo.resumeFileName || "Khustar_Hussain_Resume.pdf",
         currentRole: personalInfo.currentRole || "",
         lookingFor: personalInfo.lookingFor || "",
         yearsOfExperience: personalInfo.yearsOfExperience || "",
@@ -222,13 +228,21 @@ export default function AdminPage() {
       showToast("Please select a valid PDF document (.pdf)", "error");
       return;
     }
+    const uploadedFileName = file.name;
     setIsUploadingResume(true);
     try {
       const res = await uploadResumeFile(file);
       if (res.success) {
-        setProfileForm((prev) => ({ ...prev, resumeUrl: res.url }));
-        updatePersonalInfo({ resumeUrl: res.url });
-        showToast(res.message || "Resume PDF uploaded & updated successfully!");
+        setProfileForm((prev) => ({
+          ...prev,
+          resumeUrl: res.url,
+          resumeFileName: uploadedFileName,
+        }));
+        updatePersonalInfo({
+          resumeUrl: res.url,
+          resumeFileName: uploadedFileName,
+        });
+        showToast(`Resume "${uploadedFileName}" uploaded & updated successfully!`);
       } else {
         showToast(res.message || "Failed to upload resume", "error");
       }
@@ -1107,7 +1121,7 @@ export default function AdminPage() {
                         href={personalInfo.resumeUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        download="Khustar_Hussain_Resume.pdf"
+                        download={getResumeFileName(personalInfo)}
                         className="mt-3 text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
                       >
                         <span>Preview / Download Active PDF</span>
@@ -1369,7 +1383,7 @@ export default function AdminPage() {
                         href={personalInfo.resumeUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        download="Khustar_Hussain_Resume.pdf"
+                        download={getResumeFileName(personalInfo)}
                         className="px-3.5 py-2.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-blue-500 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
                       >
                         <Download size={14} />
@@ -1382,7 +1396,7 @@ export default function AdminPage() {
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 flex items-center gap-1.5">
                   <CheckCircle size={14} className="text-emerald-500 shrink-0" />
                   <span>
-                    Active Resume: <strong className="text-slate-700 dark:text-slate-200 font-semibold bg-slate-100 dark:bg-slate-700/60 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-600">{getResumeFileName(personalInfo?.resumeUrl)}</strong>
+                    Active Resume: <strong className="text-slate-700 dark:text-slate-200 font-semibold bg-slate-100 dark:bg-slate-700/60 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-600">{getResumeFileName(personalInfo)}</strong>
                   </span>
                 </p>
               </div>

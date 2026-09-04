@@ -287,15 +287,17 @@ export function PortfolioDataProvider({ children }) {
     return null;
   };
 
-  // Upload resume helper (replaces old file in DB and updates personalInfo.resumeUrl)
+  // Upload resume helper (replaces old file in DB and updates personalInfo.resumeUrl & resumeFileName)
   const uploadResumeFile = async (file) => {
+    const fileName = file?.name || "Khustar_Hussain_Resume.pdf";
     try {
       const cloudUrl = await uploadResumeToSupabase(file);
       if (cloudUrl) {
-        updatePersonalInfo({ resumeUrl: cloudUrl });
+        updatePersonalInfo({ resumeUrl: cloudUrl, resumeFileName: fileName });
         return {
           success: true,
           url: cloudUrl,
+          fileName,
           message: "Resume PDF uploaded to Cloud Storage and updated live across the portfolio!",
         };
       }
@@ -308,10 +310,11 @@ export function PortfolioDataProvider({ children }) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const localDataUri = e.target.result;
-        updatePersonalInfo({ resumeUrl: localDataUri });
+        updatePersonalInfo({ resumeUrl: localDataUri, resumeFileName: fileName });
         resolve({
           success: true,
           url: localDataUri,
+          fileName,
           message: "Resume updated locally! (Connect Supabase in Settings for global cloud hosting)",
         });
       };
