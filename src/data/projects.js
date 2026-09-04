@@ -11,7 +11,7 @@ export const projects = [
       "Students and developers preparing for technical interviews lack a structured, gamified platform to track daily DSA problem-solving progress, maintain revision complexity notes, and compete with peers with verifiable activity metrics.",
     solution:
       "Engineered an end-to-end full-stack platform featuring custom problem sheets, an A2Z DSA sheet tracker with complexity notes, a 365-day activity heatmap, a friend-graph leaderboard with multi-metric sorting, and hardened security filters with centralized exception handling.",
-    image: "/projects/streakify.jpg",
+    image: "/projects/streakify.svg",
     duration: "Jan 2025 – Feb 2025",
     technologies: [
       "Java",
@@ -58,7 +58,7 @@ export const projects = [
       "Students across high school and higher education levels frequently struggle with fragmented study materials, lack of clear career progression roadmaps, and unengaging learning portals with poor onboarding workflows.",
     solution:
       "Developed a fluidly animated, responsive e-learning hub featuring guided level-based learning paths (11th, 12th, Graduation, Post-Graduation), comprehensive career roadmaps, interactive question banks, an AI study assistant, and an engaging introductory onboarding flow.",
-    image: "/projects/brightpath.jpg",
+    image: "/projects/brightpath.svg",
     duration: "May 2025 – June 2025",
     technologies: [
       "Next.js",
@@ -99,7 +99,7 @@ export const projects = [
       "Job seekers spend hours manually searching generic job boards and tailoring resumes without clear feedback on skill alignment, leading to low match rates and inefficient application workflows.",
     solution:
       "Built an AI-driven resume analyzer and job ranking engine that evaluates resume fitness, pinpoints missing keywords/skills, and ranks job openings by match score, relevance, and posting recency.",
-    image: "/projects/ai-job-finder.jpg",
+    image: "/projects/ai-job-finder.svg",
     technologies: [
       "React.js",
       "Google Gemini API",
@@ -140,7 +140,7 @@ export const projects = [
       "Modern e-commerce platforms need reliable, secure backend services that ensure transactional consistency during checkout and provide performant catalog query endpoints.",
     solution:
       "Developed a robust Spring Boot REST service with Hibernate ORM, custom validation filters, centralized exception handling, and optimized indexed MySQL queries.",
-    image: "/projects/ecommerce-api.jpg",
+    image: "/projects/ecommerce-api.svg",
     technologies: [
       "Java",
       "Spring Boot",
@@ -181,7 +181,7 @@ export const projects = [
       "Engineering teams require clean, predictable REST APIs to track issue lifecycles, project milestones, and assignment accountability across distributed teams.",
     solution:
       "Engineered a scalable Spring Boot REST API utilizing PostgreSQL, JPA auditing, and fine-grained role-based security.",
-    image: "/projects/task-management.jpg",
+    image: "/projects/task-management.svg",
     technologies: [
       "Java",
       "Spring Boot",
@@ -220,7 +220,7 @@ export const projects = [
       "Standard HTTP request-response polling creates excessive server overhead for live messaging and collaboration features.",
     solution:
       "Implemented a persistent WebSocket broker with Spring Boot and STOMP message routing to deliver sub-millisecond real-time communication.",
-    image: "/projects/realtime-chat.jpg",
+    image: "/projects/realtime-chat.svg",
     technologies: [
       "Java",
       "Spring Boot",

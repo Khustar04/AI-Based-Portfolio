@@ -1636,14 +1636,35 @@ export default function AdminPage() {
                     className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between"
                   >
                     <div>
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                            {proj.title}
-                          </h3>
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-start gap-3">
+                          {proj.image ? (
+                            <img
+                              src={proj.image}
+                              alt={proj.title}
+                              className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-xs"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/50 flex items-center justify-center shrink-0">
+                              <FolderGit2 size={20} className="text-blue-600 dark:text-blue-400" />
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug">
+                              {proj.title}
+                            </h3>
+                            {proj.duration && (
+                              <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
+                                📅 {proj.duration}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <span
-                          className={`px-2.5 py-0.5 text-[10px] font-extrabold uppercase rounded-full ${
+                          className={`px-2.5 py-0.5 text-[10px] font-extrabold uppercase rounded-full shrink-0 ${
                             proj.status === "featured"
                               ? "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
                               : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400"
@@ -1652,12 +1673,6 @@ export default function AdminPage() {
                           {proj.status || "featured"}
                         </span>
                       </div>
-
-                      {proj.duration && (
-                        <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2">
-                          📅 {proj.duration}
-                        </p>
-                      )}
 
                       <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">
                         {proj.shortDescription}
@@ -2384,7 +2399,7 @@ export default function AdminPage() {
               {/* Project Image */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Project Image (Upload File or Image URL)
+                  Project Poster / Image (Upload File or Image URL)
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
                   <input
@@ -2396,9 +2411,9 @@ export default function AdminPage() {
                     placeholder="Image URL or upload file below..."
                     className="flex-1 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
-                  <label className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-1.5">
+                  <label className="px-4 py-2 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-bold text-blue-700 dark:text-blue-300 cursor-pointer flex items-center gap-1.5 transition-colors">
                     <Upload size={14} />
-                    <span>Upload Image</span>
+                    <span>Upload Poster</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -2407,6 +2422,35 @@ export default function AdminPage() {
                     />
                   </label>
                 </div>
+                {projectForm.image && (
+                  <div className="mt-3 flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl">
+                    <img
+                      src={projectForm.image}
+                      alt="Project poster preview"
+                      className="h-16 w-28 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <CheckCircle size={13} />
+                        Poster attached
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        Click &quot;Save Project&quot; below to apply changes to your live site
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setProjectForm((prev) => ({ ...prev, image: "" }))}
+                      className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
+                      title="Remove poster"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Descriptions */}

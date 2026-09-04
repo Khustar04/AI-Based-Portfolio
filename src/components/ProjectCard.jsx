@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -11,27 +12,35 @@ export default function ProjectCard({ project }) {
   const slug = project.slug || project.id || "";
   const image = project.image || "";
 
+  const [imgError, setImgError] = useState(false);
+
+  // Reset imgError if image prop changes (e.g. after upload or cloud sync)
+  useEffect(() => {
+    setImgError(false);
+  }, [image]);
+
+  const hasValidImage = Boolean(image && !imgError);
+
   return (
     <div className="group h-full bg-white dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200/90 dark:border-slate-700/60 rounded-2xl overflow-hidden transition-all duration-300 shadow-md shadow-slate-200/60 dark:shadow-none hover:shadow-2xl hover:shadow-blue-500/15 hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-1.5 flex flex-col">
       {/* Image Container */}
       <div className="p-3 pb-0">
-        <div className="w-full h-48 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/40 relative">
-          <img
-            src={image}
-            alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            onError={(e) => {
-              e.target.style.display = "none";
-              e.target.parentElement.innerHTML = `
-                <div class="w-full h-full flex flex-col items-center justify-center bg-slate-100/90 dark:bg-slate-800/80 p-4">
-                  <div class="w-14 h-14 rounded-2xl bg-blue-600/15 dark:bg-blue-500/20 border border-blue-500/30 flex items-center justify-center mb-2 shadow-inner">
-                    <span class="text-2xl font-extrabold text-blue-600 dark:text-blue-400">${title.charAt(0)}</span>
-                  </div>
-                  <span class="text-xs font-semibold text-slate-700 dark:text-gray-300 text-center">${title}</span>
-                </div>
-              `;
-            }}
-          />
+        <div className="w-full h-48 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/40 relative flex items-center justify-center">
+          {hasValidImage ? (
+            <img
+              src={image}
+              alt={title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-blue-50/50 dark:from-slate-800/90 dark:to-slate-800/60 p-4">
+              <div className="w-14 h-14 rounded-2xl bg-blue-600/15 dark:bg-blue-500/20 border border-blue-500/30 flex items-center justify-center mb-2 shadow-inner">
+                <span className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">{title.charAt(0)}</span>
+              </div>
+              <span className="text-xs font-semibold text-slate-700 dark:text-gray-300 text-center">{title}</span>
+            </div>
+          )}
         </div>
       </div>
 

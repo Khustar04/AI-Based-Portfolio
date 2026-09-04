@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ExternalLink, CheckCircle2 } from "lucide-react";
 import { GithubIcon } from "../components/icons";
@@ -9,6 +10,12 @@ export default function ProjectDetailPage() {
   const { slug } = useParams();
   const { projects } = usePortfolioData();
   const project = projects.find((p) => p.slug === slug || p.id === slug);
+
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [project?.image]);
 
   if (!project) {
     return (
@@ -28,6 +35,8 @@ export default function ProjectDetailPage() {
     );
   }
 
+  const hasValidImage = Boolean(project.image && !imgError);
+
   return (
     <main className="pt-24 pb-20 relative">
       <DecorativeCurves variant="corner" className="top-20 right-0 opacity-40" />
@@ -43,20 +52,21 @@ export default function ProjectDetailPage() {
         </Link>
 
         {/* Project Image */}
-        <div className="w-full h-64 md:h-80 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-slate-800 mb-8 border border-gray-200 dark:border-slate-700">
-          <img
-            src={project.image}
-            alt={project.title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.style.display = "none";
-              e.target.parentElement.innerHTML = `
-                <div class="w-full h-full flex items-center justify-center">
-                  <span class="text-6xl font-bold text-blue-600/20">${project.title.charAt(0)}</span>
-                </div>
-              `;
-            }}
-          />
+        <div className="w-full h-64 md:h-80 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-slate-800 mb-8 border border-gray-200 dark:border-slate-700 flex items-center justify-center">
+          {hasValidImage ? (
+            <img
+              src={project.image}
+              alt={project.title}
+              className="w-full h-full object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-blue-50/50 dark:from-slate-800 dark:to-slate-900">
+              <span className="text-6xl font-bold text-blue-600/30 dark:text-blue-400/30">
+                {project.title.charAt(0)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Title & Tech Tags */}

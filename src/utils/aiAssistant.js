@@ -91,7 +91,7 @@ FAVORITES:
 • Beverage: ${favorites.beverage || "Chai"}
 
 BACKGROUND:
-• Hometown: ${background.hometown || "Gopalganj, Bihar"}
+• Hometown: ${background.hometown || "Siwan, Bihar"}
 • Current Location: ${info.location || "Bhopal, Madhya Pradesh"}
 • Education: ${background.education || "B.Tech in CSE (AI & ML)"}
 
@@ -218,11 +218,12 @@ PORTFOLIO DATA & CONTEXT:
 ${baseContext}`;
 }
 
-// Active verified Gemini models in priority order (Fastest sub-300ms first)
+// Active verified Gemini models in priority order
 const FAST_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-3-pro-preview",
-  "gemini-3-pro",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-3-flash-preview",
 ];
 
 /**
@@ -759,7 +760,7 @@ export function generateSmartOfflineResponse(
 }
 
 /**
- * Stream responses in real-time with Admin Command interceptor and Gemini API support
+ * Get AI response with real-time SSE streaming and Admin Command execution
  */
 export async function streamGeminiResponse(
   userMessage,
@@ -769,23 +770,15 @@ export async function streamGeminiResponse(
   liveData = null,
   mutators = null
 ) {
-  // 1. Check and execute direct command immediately
-  if (mutators) {
-    const directExecution = processDirectAdminCommand(userMessage, mutators, liveData);
-    if (directExecution) {
-      if (onChunk) onChunk(directExecution);
-      return directExecution;
-    }
-  }
-
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   const systemInstruction = getSystemPrompt(isAdminMode, liveData);
   const contents = buildGeminiContents(messageHistory, userMessage);
 
   if (apiKey && apiKey.trim() !== "") {
+    // Try each model with real-time SSE streaming
     for (const model of FAST_MODELS) {
-      let accumulatedText = "";
       try {
+        let accumulatedText = "";
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey.trim()}`,
           {
@@ -795,14 +788,15 @@ export async function streamGeminiResponse(
               systemInstruction: { parts: [{ text: systemInstruction }] },
               contents,
               generationConfig: {
-                temperature: 0.6,
-                maxOutputTokens: 1024,
+                temperature: 0.7,
+                maxOutputTokens: 2048,
               },
             }),
           }
         );
 
         if (!response.ok) {
+          console.warn(`Streaming model ${model} responded with HTTP ${response.status}`);
           continue;
         }
 
@@ -836,7 +830,7 @@ export async function streamGeminiResponse(
                   }
                 }
               } catch {
-                // Ignore stream partial JSON chunks
+                // Ignore partial JSON chunk errors
               }
             }
           }
@@ -858,7 +852,7 @@ export async function streamGeminiResponse(
       }
     }
 
-    // Single-call attempt
+    // Single-call attempt fallback
     try {
       const fallback = await callGeminiAPI(userMessage, messageHistory, isAdminMode, liveData);
       if (fallback && fallback.trim()) {
@@ -878,7 +872,7 @@ export async function streamGeminiResponse(
     }
   }
 
-  // Intelligent Smart Offline Knowledge Engine
+  // Intelligent Smart Offline Knowledge Engine fallback
   const smartAnswer = generateSmartOfflineResponse(userMessage, liveData, isAdminMode, mutators);
   if (onChunk) onChunk(smartAnswer);
   return smartAnswer;
