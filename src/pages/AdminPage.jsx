@@ -33,6 +33,19 @@ import { usePortfolioData } from "../context/PortfolioDataContext";
 import { compressImageFile } from "../utils/imageCompressor";
 import { SKILL_ICON_MAP, SOCIAL_ICON_OPTIONS, resolveSocialIcon } from "../utils/iconMap";
 
+function getResumeFileName(url) {
+  if (!url) return "Khustar_Hussain_Resume.pdf";
+  if (url.startsWith("data:")) return "Uploaded_Resume.pdf";
+  try {
+    const cleanUrl = url.split("?")[0];
+    const parts = cleanUrl.split("/");
+    const name = parts[parts.length - 1];
+    return decodeURIComponent(name) || "Khustar_Hussain_Resume.pdf";
+  } catch {
+    return "Khustar_Hussain_Resume.pdf";
+  }
+}
+
 export default function AdminPage() {
   const {
     personalInfo,
@@ -1369,7 +1382,7 @@ export default function AdminPage() {
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 flex items-center gap-1.5">
                   <CheckCircle size={14} className="text-emerald-500 shrink-0" />
                   <span>
-                    Active resume link: <code className="text-blue-600 dark:text-blue-400 text-[11px] break-all">{personalInfo?.resumeUrl || "/Khustar_Hussain_Resume.pdf"}</code>
+                    Active Resume: <strong className="text-slate-700 dark:text-slate-200 font-semibold bg-slate-100 dark:bg-slate-700/60 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-600">{getResumeFileName(personalInfo?.resumeUrl)}</strong>
                   </span>
                 </p>
               </div>
@@ -1936,7 +1949,7 @@ export default function AdminPage() {
                         )}
                       </div>
                       <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                        {edu.institution}
+                        {edu.institution}       
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
                         {edu.duration} • {edu.location}
