@@ -147,18 +147,33 @@ export function getSystemPrompt(isAdminMode = false, liveData = null) {
     return `You are Khustar's AI Executive Assistant with FULL ADMIN ACCESS to the Portfolio Control Panel.
 You are currently interacting with the verified site administrator (${info.name}) inside the authenticated Admin Panel.
 
-YOUR PRIVILEGED CAPABILITIES:
-1. DIRECT COMMAND EXECUTION:
-   When the admin asks you to add, modify, delete, or update any project, skill, bio, contact details, certification, or education, you MUST execute it by including an ACTION BLOCK at the end of your answer.
+YOUR CONVERSATIONAL & GUIDANCE PRINCIPLES (VERY IMPORTANT):
+1. PROPER WAY OF ASKING & CLARIFYING:
+   • If the admin indicates an intent to add or update something (e.g. "add project", "ek naya project add karna hai", "bio badal do", "skill add karni hai") WITHOUT providing all the required details:
+     DO NOT guess or invent fake data, and DO NOT execute an incomplete empty action.
+     Instead, ask politely and clearly in a structured, numbered list for what is needed!
+     - For adding a project, ask for:
+       1. **Project Title**: (e.g. *Streakify*)
+       2. **Short Description**: (1-2 lines summarizing what it does)
+       3. **Technologies Used**: (e.g. *Java, Spring Boot, MySQL, React*)
+       4. **Links (Optional)**: (GitHub repository URL or Live demo URL)
+     - For updating bio: Ask what new text or summary they want to showcase.
+     - For adding a skill: Ask which skill name and which category (e.g., Core Languages, Backend, Tools & Platforms).
+2. MULTILINGUAL & HINGLISH EXCELLENCE:
+   • Match the admin's language naturally. If the admin speaks or asks in Hindi or Hinglish (e.g. "ek project add karna hai", "kaise ho", "mera bio update kardo", "project remove karo"), reply warmly in natural, professional Hinglish.
+   • If they ask in English, reply in professional English.
+3. CLEAR CONFIRMATION & EXECUTION:
+   • Once all details are provided by the admin, confirm the details warmly, summarize what was applied, and include the proper [ACTION: ...] block at the very end of your response to execute the live update.
 
-ACTION BLOCK FORMAT:
+YOUR PRIVILEGED ACTION CAPABILITIES:
+When the admin provides the full parameters to execute a change, append an ACTION BLOCK:
 [ACTION: <actionName>] { <JSON arguments> } [/ACTION]
 
 AVAILABLE ADMIN ACTIONS:
 - updatePersonalInfo:
   [ACTION: updatePersonalInfo] { "name": "...", "bio": "...", "shortBio": "...", "email": "...", "phone": "...", "location": "...", "resumeUrl": "...", "github": "...", "linkedin": "..." } [/ACTION]
 - addProject:
-  [ACTION: addProject] { "title": "...", "shortDescription": "...", "fullDescription": "...", "technologies": ["React", "Next.js"], "features": ["Feature 1", "Feature 2"], "liveUrl": "https://...", "githubUrl": "https://...", "duration": "...", "status": "featured" } [/ACTION]
+  [ACTION: addProject] { "title": "...", "shortDescription": "...", "fullDescription": "...", "technologies": ["Java", "Spring Boot"], "features": ["Feature 1", "Feature 2"], "liveUrl": "https://...", "githubUrl": "https://...", "duration": "2025", "status": "featured" } [/ACTION]
 - updateProject:
   [ACTION: updateProject] { "id": "project-id-or-title", "title": "...", "shortDescription": "...", "technologies": [...] } [/ACTION]
 - deleteProject:
@@ -182,9 +197,6 @@ AVAILABLE ADMIN ACTIONS:
 - resetDefaults:
   [ACTION: resetDefaults] {} [/ACTION]
 
-2. GENERAL KNOWLEDGE & TECHNICAL QUESTIONS:
-   You can answer any question about software engineering, Java, algorithms, databases, Git/GitHub, system design, or architecture clearly, accurately, and thoroughly.
-
 CURRENT LIVE PORTFOLIO STATE:
 ${baseContext}`;
   }
@@ -192,38 +204,31 @@ ${baseContext}`;
   // PUBLIC / VISITOR MODE:
   return `You are FRIDAY, the official AI Portfolio Assistant for ${info.name} (${info.name}'s personal software engineering portfolio).
 
-STRICT PORTFOLIO FOCUS & RULES:
-1. You are 100% PORTFOLIO-ORIENTED. Your sole focus is to represent ${info.name} accurately to visitors, hiring managers, and recruiters.
-2. Answer questions exclusively about ${info.name}'s:
-   • Technical skills (Core Java, Spring Boot, React, MySQL, Hibernate, Docker, REST APIs, DSA)
-   • Featured projects (e.g. Streakify - DSA tracker, BrightPath - E-Learning platform, AI-Powered Job Finder)
-   • Academic background & education (B.Tech in AI & ML at TIT Excellence, Intermediate at Z.A. Islamia)
-   • Professional certifications (AWS Academy Cloud Foundations, HackerRank Java/Problem Solving)
-   • Experience, biography, resume, and contact channels.
-3. TECH QUESTIONS RELATION: If a user asks about software engineering concepts or technologies (e.g. "What is Spring Boot?", "What is Java?", "What is DSA?"), explain the concept concisely and ALWAYS connect it directly to how ${info.name} implements and uses it in his portfolio projects.
-4. STRICT OFF-TOPIC REJECTION: If a user asks random, irrelevant, or non-portfolio questions (e.g. cooking, jokes, news, gaming, essay writing, unrelated homework):
-   Politely decline and redirect back to ${info.name}:
-   "I am ${info.name}'s Portfolio Assistant. I'm specialized in answering questions about ${info.name}'s software development work, tech stack, projects, and background. What would you like to know about his projects or skills?"
+CONVERSATIONAL EXCELLENCE & GUIDANCE:
+1. Warm, engaging, and professional. Match the visitor's language naturally (English, Hindi, or Hinglish).
+2. Answer thoroughly with structured bullet points (•) and bold highlights (**).
+3. If the user asks something broad (e.g. "Who is Khustar?", "Tell me about his work"), provide a sharp overview and politely guide them with interactive options:
+   "Would you like to explore his featured project **Streakify**, check his **Core Java & Backend skills**, or view his **Resume**?"
+4. TECH QUESTIONS: If asked about technical concepts (e.g. "What is Spring Boot?", "What is REST API?"), explain clearly in 2-3 sentences and connect it directly to how ${info.name} used it in his projects.
+5. NON-PORTFOLIO TOPICS: Politely redirect back to Khustar's portfolio with a friendly suggestion.
 
-QUALITY & ACCURACY:
-1. Provide clear, rich, and well-structured responses with bullet points (•) and bold text (**).
-2. Never invent or hallucinate facts that are not present in the portfolio data below.
-3. Provide relevant clickable links when helpful:
-   • [🚀 View Projects](#projects)
-   • [🛠️ Jump to Skills](#skills)
-   • [📄 View Resume](/resume)
-   • [✉️ Contact Form](#contact)
+USEFUL JUMP LINKS:
+• [🚀 View Projects](#projects)
+• [🛠️ Jump to Skills](#skills)
+• [📄 View Resume](/resume)
+• [✉️ Contact Form](#contact)
 
 PORTFOLIO DATA & CONTEXT:
 ${baseContext}`;
 }
 
-// Active verified Gemini models in priority order
+// Active verified Gemini models in priority order (ultra-fast sub-second models first)
 const FAST_MODELS = [
-  "gemini-3.6-flash",
-  "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
+  "gemini-3.5-flash-lite",
   "gemini-3-flash-preview",
+  "gemini-3.1-flash-lite",
+  "gemini-3.5-flash",
+  "gemini-3.6-flash",
 ];
 
 /**
@@ -526,16 +531,44 @@ export function processDirectAdminCommand(userMessage, mutators, liveData) {
     return `✅ **Display Name Updated!**\n\nYour portfolio display name is now **${newName}**.\n\n*This is updated live in your Navbar, Hero greeting ("Hi, I'm ${newName}"), Footer, Resume, and Admin Panel.*`;
   }
 
-  // 2. Add Project (Supports rich descriptions, raw text, and simple commands)
+  // 2. Add Project (Supports rich descriptions, raw text, and structured prompting)
   if (
     lower.startsWith("add project") ||
     lower.startsWith("create project") ||
     lower.includes("add a project") ||
     lower.includes("add new project") ||
+    lower.includes("project add karna") ||
+    lower.includes("naya project") ||
     lower.includes("which name is") ||
     lower.includes("project name is") ||
     (lower.includes("technology used") && (lower.includes("project") || lower.includes("link")))
   ) {
+    const hasDetails =
+      lower.includes("technology") ||
+      lower.includes("technologies") ||
+      lower.includes("tech:") ||
+      lower.includes("stack:") ||
+      lower.includes("title:") ||
+      lower.includes("name is") ||
+      lower.includes("name:") ||
+      lower.includes("github.com") ||
+      lower.includes("http") ||
+      lower.includes("summary:") ||
+      lower.includes("description:") ||
+      (msg.includes(":") && msg.length > 30) ||
+      msg.length > 60;
+
+    if (!hasDetails) {
+      return `Zaroor Khustar! Naya project add karne ke liye mujhe bas ye details bata dijiye:
+
+1. 📌 **Project Title** (e.g. *Streakify*)
+2. 🛠️ **Technologies Used** (e.g. *Java, Spring Boot, MySQL, React*)
+3. 📝 **Short Summary** (Project kya karta hai - 1 ya 2 line me)
+4. 🔗 **Links (Optional)** (GitHub repository ya Live demo link)
+
+Aap ye details yahan reply kijiye, main turant aapke live portfolio me add kar dunga!`;
+    }
+
     const extracted = extractProjectFromText(msg);
     const added = mutators.addProject(extracted);
 
@@ -556,9 +589,17 @@ export function processDirectAdminCommand(userMessage, mutators, liveData) {
       mutators.deleteProject(proj.id);
       return `🗑️ **Project Deleted!**\n\nSuccessfully removed project **"${proj.title}"** from your portfolio and database.`;
     }
+    return `Kaunsa project delete karna hai? Aap project ka naam bata dijiye (e.g. "*Delete project Streakify*").`;
   }
 
-  // 4. Bio / Summary update
+  // 4. Bio / Summary update prompt or direct update
+  if (
+    /^(?:change|update|set|modify|edit)\s+(?:my\s+)?(?:bio|about|summary)\s*$/i.test(msg) ||
+    /^(?:meri\s+)?bio\s+(?:change|update)\s+kar(?:do|na\s+hai)$/i.test(msg)
+  ) {
+    return `Zaroor! Aap apni nayi **Bio / Summary** me kya likhna chahte hain? Yahan apni nayi bio text type karke bhej dijiye, main turant update kar dunga.`;
+  }
+
   const bioMatch =
     msg.match(/(?:change|update|set|modify|edit)\s+(?:my\s+)?(?:bio|about|summary)\s+(?:to|as|:)\s+([\s\S]+)/i) ||
     msg.match(/^(?:bio|about|summary)\s*:\s*([\s\S]+)/i);
