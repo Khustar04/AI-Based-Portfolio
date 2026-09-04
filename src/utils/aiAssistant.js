@@ -779,20 +779,10 @@ export async function streamGeminiResponse(
   }
 
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-  // Validate API key format early — valid Gemini keys start with "AIza" and are ~39 chars
-  const isValidKeyFormat = apiKey && apiKey.trim().length > 30 && apiKey.trim().startsWith("AIza");
-  if (apiKey && !isValidKeyFormat) {
-    console.warn(
-      "⚠️ Invalid Gemini API Key format detected. Valid keys start with 'AIza' and are ~39 characters. " +
-      "Get a valid key from https://aistudio.google.com/apikey"
-    );
-  }
-
   const systemInstruction = getSystemPrompt(isAdminMode, liveData);
   const contents = buildGeminiContents(messageHistory, userMessage);
 
-  if (isValidKeyFormat) {
+  if (apiKey && apiKey.trim() !== "") {
     for (const model of FAST_MODELS) {
       let accumulatedText = "";
       try {
@@ -905,15 +895,6 @@ export async function callGeminiAPI(
 ) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey || apiKey.trim() === "") throw new Error("NO_API_KEY");
-
-  // Validate API key format — valid Gemini keys start with "AIza"
-  if (!apiKey.trim().startsWith("AIza")) {
-    console.warn(
-      "⚠️ Invalid Gemini API Key format. Valid keys start with 'AIza'. " +
-      "Get a valid key from https://aistudio.google.com/apikey"
-    );
-    throw new Error("INVALID_API_KEY_FORMAT");
-  }
 
   const systemInstruction = getSystemPrompt(isAdminMode, liveData);
   const contents = buildGeminiContents(messageHistory, userMessage);
