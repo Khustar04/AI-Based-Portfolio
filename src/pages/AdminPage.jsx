@@ -294,9 +294,25 @@ export default function AdminPage() {
     const file = e.target.files?.[0];
     if (file) {
       try {
-        const compressed = await compressImageFile(file, 800, 600, 0.82);
-        setProjectForm((prev) => ({ ...prev, image: compressed }));
-        showToast("Project image optimized!");
+        let finalUrl = null;
+        // Try Supabase cloud storage first (same pattern as profile photo & certificate uploads)
+        if (cloudStatus?.isConfigured) {
+          try {
+            finalUrl = await uploadImageFile(file, "projects");
+          } catch (uploadErr) {
+            console.warn("Supabase project image upload failed, falling back to local:", uploadErr.message);
+          }
+        }
+        // Fallback: compress to Base64 for local storage
+        if (!finalUrl) {
+          finalUrl = await compressImageFile(file, 800, 600, 0.82);
+        }
+        setProjectForm((prev) => ({ ...prev, image: finalUrl }));
+        showToast(
+          cloudStatus?.isConfigured && finalUrl?.startsWith("http")
+            ? "Project image uploaded to Cloud Storage (Visible globally)!"
+            : "Project image optimized locally!"
+        );
       } catch (err) {
         showToast("Failed to process image file", "error");
       }

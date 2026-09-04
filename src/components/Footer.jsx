@@ -100,7 +100,7 @@ export default function Footer() {
             © {currentYear} {personalInfo.name}. All rights reserved.
           </p>
           <p className="text-gray-400 text-xs flex items-center gap-1">
-            Built with <Heart size={12} className="text-red-400 fill-red-400" /> & React
+            Built By <Heart size={12} className="text-red-400 fill-red-400" /> Khustar
           </p>
         </div>
       </div>
