@@ -52,7 +52,7 @@ export default function ProjectDetailPage() {
         </Link>
 
         {/* Project Image */}
-        <div className="w-full h-64 md:h-80 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-slate-800 mb-8 border border-gray-200 dark:border-slate-700 flex items-center justify-center">
+        <div className="w-full aspect-video rounded-2xl overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-slate-800 mb-8 border border-gray-200 dark:border-slate-700 flex items-center justify-center">
           {hasValidImage ? (
             <img
               src={project.image}

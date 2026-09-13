@@ -25,7 +25,7 @@ export default function ProjectCard({ project }) {
     <div className="group h-full bg-white dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200/90 dark:border-slate-700/60 rounded-2xl overflow-hidden transition-all duration-300 shadow-md shadow-slate-200/60 dark:shadow-none hover:shadow-2xl hover:shadow-blue-500/15 hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-1.5 flex flex-col">
       {/* Image Container */}
       <div className="p-3 pb-0">
-        <div className="w-full h-48 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/40 relative flex items-center justify-center">
+        <div className="w-full aspect-video rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/40 relative flex items-center justify-center">
           {hasValidImage ? (
             <img
               src={image}
