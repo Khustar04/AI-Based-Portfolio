@@ -279,8 +279,10 @@ export default function AdminPage() {
   });
   const [techInput, setTechInput] = useState("");
   const [featureInput, setFeatureInput] = useState("");
+  const [isUploadingProjectImage, setIsUploadingProjectImage] = useState(false);
 
   const openNewProjectModal = () => {
+    setIsUploadingProjectImage(false);
     setEditingProject(null);
     setProjectForm({
       title: "",
@@ -306,6 +308,7 @@ export default function AdminPage() {
   };
 
   const openEditProjectModal = (proj) => {
+    setIsUploadingProjectImage(false);
     setEditingProject(proj);
     setProjectForm({
       ...proj,
@@ -319,30 +322,58 @@ export default function AdminPage() {
 
   const handleProjectImageUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      try {
-        let finalUrl = null;
-        // Try Supabase cloud storage first (same pattern as profile photo & certificate uploads)
-        if (cloudStatus?.isConfigured) {
-          try {
-            finalUrl = await uploadImageFile(file, "projects");
-          } catch (uploadErr) {
-            console.warn("Supabase project image upload failed, falling back to local:", uploadErr.message);
+    const inputElement = e.target;
+    if (!file) return;
+
+    // Validate image format
+    if (!file.type.startsWith("image/") && !file.name.match(/\.(jpe?g|png|webp|svg|gif|avif)$/i)) {
+      showToast("Please select a valid image file (PNG, JPG, WebP, SVG)", "error");
+      if (inputElement) inputElement.value = "";
+      return;
+    }
+
+    setIsUploadingProjectImage(true);
+    try {
+      // 1. Optimize image (max 900x600, quality 0.78) for high resolution and low payload (< 40KB)
+      const optimizedDataUrl = await compressImageFile(file, 900, 600, 0.78);
+      
+      // Update preview immediately so the user sees their poster without waiting
+      setProjectForm((prev) => ({ ...prev, image: optimizedDataUrl }));
+
+      let finalUrl = optimizedDataUrl;
+
+      // 2. Try Supabase cloud storage if configured with a 3.5s timeout
+      if (cloudStatus?.isConfigured) {
+        try {
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Cloud upload timeout")), 3500)
+          );
+          const cloudRes = await Promise.race([
+            uploadImageFile(file, "projects"),
+            timeoutPromise,
+          ]);
+
+          if (cloudRes && typeof cloudRes === "string" && cloudRes.startsWith("http")) {
+            finalUrl = cloudRes;
+            setProjectForm((prev) => ({ ...prev, image: finalUrl }));
           }
+        } catch (uploadErr) {
+          console.warn("Supabase project image upload failed, using optimized local data:", uploadErr.message);
         }
-        // Fallback: compress to Base64 for local storage
-        if (!finalUrl) {
-          finalUrl = await compressImageFile(file, 800, 600, 0.82);
-        }
-        setProjectForm((prev) => ({ ...prev, image: finalUrl }));
-        showToast(
-          cloudStatus?.isConfigured && finalUrl?.startsWith("http")
-            ? "Project image uploaded to Cloud Storage (Visible globally)!"
-            : "Project image optimized locally!"
-        );
-      } catch (err) {
-        showToast("Failed to process image file", "error");
       }
+
+      showToast(
+        finalUrl?.startsWith("http")
+          ? "Project poster uploaded to Cloud Storage!"
+          : "Project poster attached and optimized successfully!"
+      );
+    } catch (err) {
+      console.error("Project poster upload error:", err);
+      showToast("Failed to process image: " + (err.message || "Unknown error"), "error");
+    } finally {
+      setIsUploadingProjectImage(false);
+      // Reset input value so re-selecting the same file triggers onChange
+      if (inputElement) inputElement.value = "";
     }
   };
 
@@ -382,6 +413,10 @@ export default function AdminPage() {
 
   const handleProjectSave = (e) => {
     e.preventDefault();
+    if (isUploadingProjectImage) {
+      showToast("Please wait for project poster to finish uploading", "error");
+      return;
+    }
     if (!projectForm.title.trim()) {
       showToast("Project title is required", "error");
       return;
@@ -2438,17 +2473,39 @@ export default function AdminPage() {
                     placeholder="Image URL or upload file below..."
                     className="flex-1 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
-                  <label className="px-4 py-2 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-bold text-blue-700 dark:text-blue-300 cursor-pointer flex items-center gap-1.5 transition-colors">
-                    <Upload size={14} />
-                    <span>Upload Poster</span>
+                  <label
+                    className={`px-4 py-2 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-bold text-blue-700 dark:text-blue-300 cursor-pointer flex items-center gap-1.5 transition-colors ${
+                      isUploadingProjectImage ? "opacity-60 pointer-events-none" : ""
+                    }`}
+                  >
+                    {isUploadingProjectImage ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin text-blue-600 dark:text-blue-400" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={14} />
+                        <span>Upload Poster</span>
+                      </>
+                    )}
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleProjectImageUpload}
+                      disabled={isUploadingProjectImage}
                       className="hidden"
                     />
                   </label>
                 </div>
+
+                {isUploadingProjectImage && (
+                  <div className="mt-2.5 p-3 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 rounded-xl flex items-center gap-2.5 text-xs text-blue-700 dark:text-blue-300">
+                    <Loader2 size={15} className="animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span>Processing and optimizing poster image...</span>
+                  </div>
+                )}
+
                 {projectForm.image && (
                   <div className="mt-3 flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl">
                     <img
@@ -2649,7 +2706,8 @@ export default function AdminPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-blue-500/20 cursor-pointer flex items-center gap-2"
+                  disabled={isUploadingProjectImage}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-blue-500/20 cursor-pointer flex items-center gap-2"
                 >
                   <Save size={15} />
                   <span>{editingProject ? "Update Project" : "Save Project"}</span>
