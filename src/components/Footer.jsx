@@ -18,12 +18,9 @@ export default function Footer() {
           <div>
             <Link
               to="/"
-              className="text-xl font-black tracking-tight text-white flex items-center gap-2 mb-3"
+              className="inline-flex items-center gap-2 shrink-0 mb-4 transition-transform hover:scale-105"
             >
-              <span className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-sm font-bold shadow-md shadow-blue-500/25">
-                {personalInfo.name.charAt(0)}
-              </span>
-              <span>{personalInfo.name}</span>
+              <img src="/logo.png" alt="Khustar Hussain Logo" className="h-12 w-auto object-contain drop-shadow-md" />
             </Link>
             <p className="text-gray-400 text-xs leading-relaxed max-w-sm">
               {Array.isArray(personalInfo.titles)

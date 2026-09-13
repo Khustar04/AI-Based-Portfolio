@@ -32,6 +32,8 @@ import {
 import { usePortfolioData } from "../context/PortfolioDataContext";
 import { compressImageFile } from "../utils/imageCompressor";
 import { SKILL_ICON_MAP, SOCIAL_ICON_OPTIONS, resolveSocialIcon } from "../utils/iconMap";
+import Cropper from 'react-easy-crop';
+import { getCroppedImg } from '../utils/cropImage';
 
 function getResumeFileName(personalInfo) {
   if (personalInfo?.resumeFileName && personalInfo.resumeFileName.trim()) {
@@ -259,6 +261,12 @@ export default function AdminPage() {
   // -------------------------------------------------------------
   const [editingProject, setEditingProject] = useState(null);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState(null);
+  const [cropImageFile, setCropImageFile] = useState(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [projectForm, setProjectForm] = useState({
     title: "",
     slug: "",
@@ -320,7 +328,7 @@ export default function AdminPage() {
     setIsProjectModalOpen(true);
   };
 
-  const handleProjectImageUpload = async (e) => {
+  const handleProjectImageUpload = (e) => {
     const file = e.target.files?.[0];
     const inputElement = e.target;
     if (!file) return;
@@ -332,10 +340,29 @@ export default function AdminPage() {
       return;
     }
 
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      setCropImageSrc(reader.result?.toString() || "");
+      setCropImageFile(file);
+      setIsCropModalOpen(true);
+      if (inputElement) inputElement.value = "";
+    });
+    reader.readAsDataURL(file);
+  };
+
+  const processCroppedImage = async () => {
+    if (!cropImageSrc || !croppedAreaPixels) return;
+
+    setIsCropModalOpen(false);
     setIsUploadingProjectImage(true);
+    
     try {
+      const croppedBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+      const fileExt = cropImageFile?.name?.split('.')?.pop() || 'jpg';
+      const fileToUpload = new File([croppedBlob], `cropped-project.${fileExt}`, { type: "image/jpeg" });
+
       // 1. Optimize image (max 900x600, quality 0.78) for high resolution and low payload (< 40KB)
-      const optimizedDataUrl = await compressImageFile(file, 900, 600, 0.78);
+      const optimizedDataUrl = await compressImageFile(fileToUpload, 900, 600, 0.78);
       
       // Update preview immediately so the user sees their poster without waiting
       setProjectForm((prev) => ({ ...prev, image: optimizedDataUrl }));
@@ -349,7 +376,7 @@ export default function AdminPage() {
             setTimeout(() => reject(new Error("Cloud upload timeout")), 3500)
           );
           const cloudRes = await Promise.race([
-            uploadImageFile(file, "projects"),
+            uploadImageFile(fileToUpload, "projects"),
             timeoutPromise,
           ]);
 
@@ -372,8 +399,8 @@ export default function AdminPage() {
       showToast("Failed to process image: " + (err.message || "Unknown error"), "error");
     } finally {
       setIsUploadingProjectImage(false);
-      // Reset input value so re-selecting the same file triggers onChange
-      if (inputElement) inputElement.value = "";
+      setCropImageSrc(null);
+      setCropImageFile(null);
     }
   };
 
@@ -2342,6 +2369,57 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+      {/* ============================================================= */}
+      {/* MODAL: IMAGE CROP */}
+      {/* ============================================================= */}
+      {isCropModalOpen && cropImageSrc && (
+        <div className="fixed inset-0 z-[60] flex flex-col p-4 bg-black/80 backdrop-blur-sm">
+          <div className="flex-1 relative w-full h-full max-w-5xl mx-auto mt-4 rounded-t-2xl overflow-hidden bg-slate-950">
+            <Cropper
+              image={cropImageSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={16 / 9}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={(croppedArea, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
+            />
+          </div>
+          <div className="bg-white dark:bg-slate-900 p-4 flex flex-col md:flex-row gap-4 items-center justify-between shrink-0 rounded-b-2xl max-w-5xl mx-auto w-full shadow-2xl">
+            <div className="flex items-center gap-4 w-full md:w-1/2 px-2">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Zoom</span>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.1}
+                value={zoom}
+                onChange={(e) => setZoom(e.target.value)}
+                className="w-full accent-blue-600"
+              />
+            </div>
+            <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+              <button
+                onClick={() => {
+                  setIsCropModalOpen(false);
+                  setCropImageSrc(null);
+                  setCropImageFile(null);
+                }}
+                className="px-4 py-2 font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors w-full md:w-auto cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={processCroppedImage}
+                disabled={isUploadingProjectImage}
+                className="px-6 py-2 font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-colors shadow-sm w-full md:w-auto flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isUploadingProjectImage ? <Loader2 className="w-5 h-5 animate-spin" /> : "Apply Crop"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ============================================================= */}
       {/* MODAL: PROJECT ADD / EDIT */}
