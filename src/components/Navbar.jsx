@@ -69,8 +69,8 @@ export default function Navbar() {
             to="/"
             className="flex items-center gap-3 shrink-0 transition-transform hover:scale-105"
           >
-            <img src="/logo.png" alt="Khustar Hussain Logo" className="h-10 md:h-12 w-auto object-contain drop-shadow-sm" />
-            <span className="text-xl font-extrabold text-blue-600 dark:text-blue-400">{personalInfo.name}</span>
+            <img src="/logo.png" alt="Khustar Hussain Logo" className="h-10 md:h-12 w-auto object-contain drop-shadow-sm dark:brightness-0 dark:invert" />
+            <span className="text-xl font-extrabold text-slate-800 dark:text-white">{personalInfo.name}</span>
           </Link>
 
           {/* Desktop Nav Links */}

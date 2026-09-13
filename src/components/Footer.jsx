@@ -20,7 +20,7 @@ export default function Footer() {
               to="/"
               className="inline-flex items-center gap-3 shrink-0 mb-4 transition-transform hover:scale-105"
             >
-              <img src="/logo.png" alt="Khustar Hussain Logo" className="h-10 md:h-12 w-auto object-contain drop-shadow-md" />
+              <img src="/logo.png" alt="Khustar Hussain Logo" className="h-10 md:h-12 w-auto object-contain drop-shadow-md brightness-0 invert" />
               <span className="text-xl font-extrabold text-white">{personalInfo.name}</span>
             </Link>
             <p className="text-gray-400 text-xs leading-relaxed max-w-sm">
