@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { GraduationCap, Calendar } from "lucide-react";
 
-export default function EducationCard({ item, isLast }) {
+function EducationCard({ item, isLast }) {
   return (
     <div className="relative flex gap-6">
       {/* Timeline Node with Glow */}
@@ -14,7 +15,7 @@ export default function EducationCard({ item, isLast }) {
       </div>
 
       {/* Glass Card */}
-      <div className="bg-white dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200/90 dark:border-slate-700/60 rounded-2xl p-6 flex-1 mb-8 border-l-4 border-l-blue-600 dark:border-l-blue-500 shadow-md shadow-slate-200/60 dark:shadow-none hover:shadow-xl transition-all">
+      <div className="bg-white dark:bg-slate-800/50 backdrop-blur-md border border-slate-200/90 dark:border-slate-700/60 rounded-2xl p-6 flex-1 mb-8 border-l-4 border-l-blue-600 dark:border-l-blue-500 shadow-md shadow-slate-200/60 dark:shadow-none hover:shadow-xl transition-all">
         <div className="flex flex-wrap items-center gap-3 mb-2">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">
             {item.degree}
@@ -65,3 +66,5 @@ export default function EducationCard({ item, isLast }) {
     </div>
   );
 }
+
+export default memo(EducationCard);

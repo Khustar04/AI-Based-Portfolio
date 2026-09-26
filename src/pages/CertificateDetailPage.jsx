@@ -7,8 +7,11 @@ import DecorativeCurves from "../components/DecorativeCurves";
 export default function CertificateDetailPage() {
   const { slug } = useParams();
   const { certifications } = usePortfolioData();
-  const certificate = certifications.find(
-    (c) => c.slug === slug || c.id === slug
+  const cleanSlug = (slug || "").trim().toLowerCase();
+  const certificate = (certifications || []).find(
+    (c) =>
+      (c.slug || "").trim().toLowerCase() === cleanSlug ||
+      String(c.id || "").trim().toLowerCase() === cleanSlug
   );
 
   if (!certificate) {
@@ -48,6 +51,7 @@ export default function CertificateDetailPage() {
           <img
             src={certificate.image}
             alt={certificate.title}
+            decoding="async"
             className="max-w-full max-h-[480px] w-auto h-auto object-contain"
             onError={(e) => {
               e.target.style.display = "none";

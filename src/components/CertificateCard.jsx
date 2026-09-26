@@ -1,14 +1,19 @@
+import { memo } from "react";
 import { ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export default function CertificateCard({ certificate }) {
+function CertificateCard({ certificate }) {
   return (
-    <div className="group h-full bg-white dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200/90 dark:border-slate-700/60 rounded-2xl p-6 transition-all duration-300 shadow-md shadow-slate-200/60 dark:shadow-none hover:shadow-2xl hover:shadow-blue-500/15 hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-1.5 flex flex-col">
+    <div className="group h-full bg-white dark:bg-slate-800/50 backdrop-blur-md border border-slate-200/90 dark:border-slate-700/60 rounded-2xl p-6 transition-all duration-300 shadow-md shadow-slate-200/60 dark:shadow-none hover:shadow-2xl hover:shadow-blue-500/15 hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-1.5 flex flex-col">
       {/* Badge Area */}
       <div className="w-full h-36 rounded-xl bg-slate-100/90 dark:bg-slate-800/70 border border-slate-200/90 dark:border-slate-700/50 flex items-center justify-center mb-5 overflow-hidden p-1 shadow-inner">
         <img
           src={certificate.image}
           alt={certificate.title}
+          width="200"
+          height="144"
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
           onError={(e) => {
             e.target.style.display = "none";
@@ -46,3 +51,5 @@ export default function CertificateCard({ certificate }) {
     </div>
   );
 }
+
+export default memo(CertificateCard);

@@ -1,11 +1,12 @@
+import { memo } from "react";
 import { resolveSkillIcon } from "../utils/iconMap";
 
-export default function SkillCard({ skill }) {
+function SkillCard({ skill }) {
   if (!skill) return null;
   const IconComponent = resolveSkillIcon(skill);
 
   return (
-    <div className="group h-full bg-white dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200/90 dark:border-slate-700/60 rounded-2xl p-6 transition-all duration-300 shadow-md shadow-slate-200/60 dark:shadow-none hover:shadow-xl hover:shadow-blue-500/15 hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-1.5 flex flex-col">
+    <div className="group h-full bg-white dark:bg-slate-800/50 backdrop-blur-md border border-slate-200/90 dark:border-slate-700/60 rounded-2xl p-6 transition-all duration-300 shadow-md shadow-slate-200/60 dark:shadow-none hover:shadow-xl hover:shadow-blue-500/15 hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-1.5 flex flex-col">
       {/* Icon with Frosted Background */}
       <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:border-blue-600 transition-all duration-300 shadow-xs">
         {typeof IconComponent === "function" || (typeof IconComponent === "object" && IconComponent !== null && IconComponent.$$typeof) ? (
@@ -34,3 +35,5 @@ export default function SkillCard({ skill }) {
     </div>
   );
 }
+
+export default memo(SkillCard);

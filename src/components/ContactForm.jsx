@@ -114,12 +114,14 @@ export default function ContactForm() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+              <label htmlFor="contact-name" className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
                 Your Name
               </label>
               <input
+                id="contact-name"
                 type="text"
                 name="name"
+                autoComplete="name"
                 placeholder="Name"
                 value={formData.name}
                 onChange={handleChange}
@@ -130,12 +132,14 @@ export default function ContactForm() {
               )}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+              <label htmlFor="contact-email" className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
                 Your Email
               </label>
               <input
+                id="contact-email"
                 type="email"
                 name="email"
+                autoComplete="email"
                 placeholder="John04@example.com"
                 value={formData.email}
                 onChange={handleChange}
@@ -148,10 +152,11 @@ export default function ContactForm() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+            <label htmlFor="contact-subject" className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
               Subject
             </label>
             <input
+              id="contact-subject"
               type="text"
               name="subject"
               placeholder="Java Developer Role / Project Inquiry"
@@ -165,10 +170,11 @@ export default function ContactForm() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+            <label htmlFor="contact-message" className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
               Message
             </label>
             <textarea
+              id="contact-message"
               name="message"
               placeholder="Hi Khustar, I came across your portfolio and would like to discuss..."
               rows={4}

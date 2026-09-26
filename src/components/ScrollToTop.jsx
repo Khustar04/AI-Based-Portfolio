@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useLenis } from "lenis/react";
 
 export default function ScrollToTop() {
   const { pathname, hash } = useLocation();
+  const lenis = useLenis();
 
   useEffect(() => {
     if (hash) {
@@ -10,7 +12,11 @@ export default function ScrollToTop() {
       const scrollToHash = () => {
         const el = document.getElementById(id);
         if (el) {
-          el.scrollIntoView({ behavior: "smooth" });
+          if (lenis) {
+            lenis.scrollTo(el, { offset: -80 });
+          } else {
+            el.scrollIntoView();
+          }
           return true;
         }
         return false;
@@ -18,16 +24,20 @@ export default function ScrollToTop() {
 
       if (scrollToHash()) return;
 
-      const retryA = setTimeout(scrollToHash, 120);
-      const retryB = setTimeout(scrollToHash, 400);
+      const retryA = setTimeout(scrollToHash, 100);
+      const retryB = setTimeout(scrollToHash, 300);
       return () => {
         clearTimeout(retryA);
         clearTimeout(retryB);
       };
     }
 
-    window.scrollTo(0, 0);
-  }, [pathname, hash]);
+    if (lenis) {
+      lenis.scrollTo(0, { immediate: true });
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, hash, lenis]);
 
   return null;
 }

@@ -28,8 +28,8 @@ export const portfolioNavigationMap = {
 function buildGeminiContents(messageHistory = [], userMessage = "") {
   const contents = [];
 
-  // Retain up to 30 recent conversational turns for deep context memory
-  const relevantHistory = messageHistory.slice(-30);
+  // Retain up to 8 recent conversational turns for lightning-fast token processing
+  const relevantHistory = messageHistory.slice(-8);
 
   for (const msg of relevantHistory) {
     if (msg.role === "user" && msg.content?.trim()) {
@@ -206,7 +206,7 @@ ${baseContext}`;
 
 CONVERSATIONAL EXCELLENCE & GUIDANCE:
 1. Warm, engaging, and professional. Match the visitor's language naturally (English, Hindi, or Hinglish).
-2. Answer thoroughly with structured bullet points (•) and bold highlights (**).
+2. SPEED & CONCISENESS (CRITICAL FOR UX): Keep answers punchy, high-impact, and directly helpful (maximum 2-3 bullet points or 2-3 sentences unless the user explicitly asks for full in-depth details). Do not repeat repetitive greetings every turn.
 3. If the user asks something broad (e.g. "Who is Khustar?", "Tell me about his work"), provide a sharp overview and politely guide them with interactive options:
    "Would you like to explore his featured project **Streakify**, check his **Core Java & Backend skills**, or view his **Resume**?"
 4. TECH QUESTIONS: If asked about technical concepts (e.g. "What is Spring Boot?", "What is REST API?"), explain clearly in 2-3 sentences and connect it directly to how ${info.name} used it in his projects.
@@ -225,10 +225,8 @@ ${baseContext}`;
 // Active verified Gemini models in priority order (ultra-fast sub-second models first)
 const FAST_MODELS = [
   "gemini-3.5-flash-lite",
-  "gemini-3-flash-preview",
   "gemini-3.1-flash-lite",
-  "gemini-3.5-flash",
-  "gemini-3.6-flash",
+  "gemini-flash-lite-latest",
 ];
 
 /**
@@ -816,8 +814,11 @@ export async function streamGeminiResponse(
   const contents = buildGeminiContents(messageHistory, userMessage);
 
   if (apiKey && apiKey.trim() !== "") {
-    // Try each model with real-time SSE streaming
+    // Try each model with real-time SSE streaming and strict fast-fail timeouts
     for (const model of FAST_MODELS) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4500);
+
       try {
         let accumulatedText = "";
         const response = await fetch(
@@ -825,16 +826,19 @@ export async function streamGeminiResponse(
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: systemInstruction }] },
               contents,
               generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 2048,
+                temperature: 0.5,
+                maxOutputTokens: isAdminMode ? 800 : 500,
               },
             }),
           }
         );
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           console.warn(`Streaming model ${model} responded with HTTP ${response.status}`);
@@ -889,11 +893,12 @@ export async function streamGeminiResponse(
           return accumulatedText;
         }
       } catch (err) {
-        console.warn(`Streaming attempt for ${model} failed:`, err.message);
+        clearTimeout(timeoutId);
+        console.warn(`Streaming attempt for ${model} failed or timed out:`, err.message);
       }
     }
 
-    // Single-call attempt fallback
+    // Single-call attempt fallback with 3.5s timeout
     try {
       const fallback = await callGeminiAPI(userMessage, messageHistory, isAdminMode, liveData);
       if (fallback && fallback.trim()) {
@@ -913,14 +918,14 @@ export async function streamGeminiResponse(
     }
   }
 
-  // Intelligent Smart Offline Knowledge Engine fallback
+  // Intelligent Smart Offline Knowledge Engine fallback (instant <10ms response)
   const smartAnswer = generateSmartOfflineResponse(userMessage, liveData, isAdminMode, mutators);
   if (onChunk) onChunk(smartAnswer);
   return smartAnswer;
 }
 
 /**
- * Standard single-call fallback
+ * Standard single-call fallback with 3.5s timeout per model
  */
 export async function callGeminiAPI(
   userMessage,
@@ -935,22 +940,28 @@ export async function callGeminiAPI(
   const contents = buildGeminiContents(messageHistory, userMessage);
 
   for (const model of FAST_MODELS) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: systemInstruction }] },
             contents,
             generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 2048,
+              temperature: 0.5,
+              maxOutputTokens: isAdminMode ? 800 : 500,
             },
           }),
         }
       );
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) continue;
 
@@ -958,6 +969,7 @@ export async function callGeminiAPI(
       const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (answer && answer.trim()) return answer;
     } catch (err) {
+      clearTimeout(timeoutId);
       console.warn(`Model ${model} failed:`, err.message);
     }
   }

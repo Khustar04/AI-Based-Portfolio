@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, Sun, Moon } from "lucide-react";
+import { useLenis } from "lenis/react";
 import { useTheme } from "../context/ThemeContext";
 import { usePortfolioData } from "../context/PortfolioDataContext";
 
@@ -28,10 +29,21 @@ export default function Navbar() {
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
+  const lenis = useLenis();
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrolled = window.scrollY > 20;
+          setIsScrolled((prev) => (prev !== scrolled ? scrolled : prev));
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -45,7 +57,11 @@ export default function Navbar() {
       if (location.pathname === "/") {
         const el = document.getElementById(id);
         if (el) {
-          el.scrollIntoView({ behavior: "smooth" });
+          if (lenis) {
+            lenis.scrollTo(el, { offset: -80 });
+          } else {
+            el.scrollIntoView();
+          }
         }
       } else {
         navigate({ pathname: "/", hash: id });
@@ -56,7 +72,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-xl ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md ${
         isScrolled
           ? "bg-white/80 dark:bg-slate-900/80 shadow-md shadow-blue-500/5 border-b border-white/40 dark:border-slate-800/80"
           : "bg-white/65 dark:bg-slate-900/65 border-b border-white/20 dark:border-slate-800/40"
@@ -67,9 +83,28 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             to="/"
+            onClick={(e) => {
+              if (location.pathname === "/") {
+                e.preventDefault();
+                if (lenis) lenis.scrollTo(0);
+                else window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+              setIsMenuOpen(false);
+            }}
             className="flex items-center gap-3 shrink-0 transition-transform hover:scale-105"
           >
-            <img src="/logo.png" alt="Khustar Hussain Logo" className="h-10 md:h-12 w-auto object-contain drop-shadow-sm dark:brightness-0 dark:invert" />
+            <picture>
+              <source srcSet="/logo.webp" type="image/webp" />
+              <img
+                src="/logo.png"
+                alt="Khustar Hussain Logo"
+                width="48"
+                height="48"
+                fetchPriority="high"
+                decoding="async"
+                className="h-10 md:h-12 w-auto object-contain drop-shadow-sm dark:brightness-0 dark:invert"
+              />
+            </picture>
             <span className="text-xl font-extrabold text-slate-800 dark:text-white">{personalInfo.name}</span>
           </Link>
 
@@ -80,6 +115,14 @@ export default function Navbar() {
                 <Link
                   key={link.name}
                   to={link.path}
+                  onClick={(e) => {
+                    if (link.path === "/" && location.pathname === "/") {
+                      e.preventDefault();
+                      if (lenis) lenis.scrollTo(0);
+                      else window.scrollTo({ top: 0, behavior: "smooth" });
+                    }
+                    setIsMenuOpen(false);
+                  }}
                   className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                     location.pathname === link.path
                       ? "bg-blue-600 text-white shadow-sm shadow-blue-500/30"

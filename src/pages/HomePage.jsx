@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { motion } from "motion/react";
 import HeroSection from "../components/HeroSection";
 import SkillCard from "../components/SkillCard";
 import ProjectCard from "../components/ProjectCard";
@@ -11,18 +12,11 @@ import { usePortfolioData } from "../context/PortfolioDataContext";
 import { Phone, Mail, MapPin, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { GithubIcon } from "../components/icons";
 import { resolveSocialIcon, formatSocialHref, isBlankTarget } from "../utils/iconMap";
-import { gsap, ScrollTrigger } from "../utils/gsapAnimations";
 
 export default function HomePage() {
   const { skills, projects, certifications, education, personalInfo, socialLinks } =
     usePortfolioData();
   const [showAllProjects, setShowAllProjects] = useState(false);
-
-  const skillsRef = useRef(null);
-  const projectsRef = useRef(null);
-  const certsRef = useRef(null);
-  const educationRef = useRef(null);
-  const contactRef = useRef(null);
 
   const safeSkills = Array.isArray(skills) ? skills : [];
   const safeProjects = Array.isArray(projects) ? projects : [];
@@ -89,105 +83,6 @@ export default function HomePage() {
 
   const allContactItems = [...baseContactItems, ...dynamicSocialItems];
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Skills Stagger
-      if (skillsRef.current) {
-        gsap.from(".skill-card-item", {
-          scrollTrigger: {
-            trigger: skillsRef.current,
-            start: "top 88%",
-            once: true,
-          },
-          y: 25,
-          autoAlpha: 0,
-          stagger: 0.05,
-          duration: 0.45,
-          ease: "power2.out",
-          clearProps: "all",
-        });
-      }
-
-      // Projects Stagger
-      if (projectsRef.current) {
-        gsap.from(".project-card-item", {
-          scrollTrigger: {
-            trigger: projectsRef.current,
-            start: "top 88%",
-            once: true,
-          },
-          y: 30,
-          autoAlpha: 0,
-          stagger: 0.08,
-          duration: 0.5,
-          ease: "power2.out",
-          clearProps: "all",
-        });
-      }
-
-      // Certifications Stagger
-      if (certsRef.current) {
-        gsap.from(".cert-card-item", {
-          scrollTrigger: {
-            trigger: certsRef.current,
-            start: "top 88%",
-            once: true,
-          },
-          y: 25,
-          autoAlpha: 0,
-          stagger: 0.06,
-          duration: 0.45,
-          ease: "power2.out",
-          clearProps: "all",
-        });
-      }
-
-      // Education Stagger
-      if (educationRef.current) {
-        gsap.from(".education-item", {
-          scrollTrigger: {
-            trigger: educationRef.current,
-            start: "top 88%",
-            once: true,
-          },
-          x: -20,
-          autoAlpha: 0,
-          stagger: 0.1,
-          duration: 0.5,
-          ease: "power2.out",
-          clearProps: "all",
-        });
-      }
-
-      // Centered Contact Card Animation
-      if (contactRef.current) {
-        gsap.from(".contact-form-card-container", {
-          scrollTrigger: {
-            trigger: contactRef.current,
-            start: "top 85%",
-            once: true,
-          },
-          y: 25,
-          autoAlpha: 0,
-          duration: 0.45,
-          ease: "power2.out",
-          clearProps: "all",
-        });
-      }
-    });
-
-    return () => {
-      ctx.revert();
-    };
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      ScrollTrigger.refresh();
-    }, 80);
-    return () => clearTimeout(timer);
-  }, [showAllProjects]);
-
   return (
     <main className="transition-colors duration-300">
       {/* Hero */}
@@ -196,10 +91,9 @@ export default function HomePage() {
       {/* Skills Section with Glass Ambient Styling */}
       <section
         id="skills"
-        ref={skillsRef}
-        className="relative py-20 md:py-28 bg-slate-100/60 dark:bg-slate-900/40 backdrop-blur-sm border-y border-slate-200/80 dark:border-slate-800/60 transition-colors duration-300 overflow-hidden"
+        className="relative py-20 md:py-28 bg-slate-100/60 dark:bg-slate-900/40 backdrop-blur-xs border-y border-slate-200/80 dark:border-slate-800/60 transition-colors duration-300 overflow-hidden"
       >
-        <div className="absolute top-1/2 -left-32 w-80 h-80 bg-blue-500/10 dark:bg-blue-600/10 rounded-full blur-[100px] pointer-events-none -z-10" />
+        <div className="absolute top-1/2 -left-32 w-80 h-80 rounded-full ambient-glow-1 -z-10" />
         <DecorativeCurves variant="section" className="top-0 left-0 w-full opacity-50" />
         <div className="max-w-[1200px] mx-auto px-6 relative z-10">
           <SectionHeading
@@ -207,10 +101,17 @@ export default function HomePage() {
             subtitle="Technologies and tools I work with to build robust, scalable applications"
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {safeSkills.map((skill) => (
-              <div key={skill.id} className="skill-card-item h-full">
+            {safeSkills.map((skill, index) => (
+              <motion.div
+                key={skill.id}
+                className="skill-card-item h-full"
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: (index % 3) * 0.04 }}
+              >
                 <SkillCard skill={skill} />
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -219,10 +120,9 @@ export default function HomePage() {
       {/* Projects Section */}
       <section
         id="projects"
-        ref={projectsRef}
         className="relative py-20 md:py-28 transition-colors duration-300 overflow-hidden"
       >
-        <div className="absolute top-1/3 -right-32 w-96 h-96 bg-sky-400/10 dark:bg-sky-600/10 rounded-full blur-[120px] pointer-events-none -z-10" />
+        <div className="absolute top-1/3 -right-32 w-96 h-96 rounded-full ambient-glow-2 -z-10" />
         <div className="max-w-[1200px] mx-auto px-6 relative z-10">
           <SectionHeading
             title="Featured Projects"
@@ -231,10 +131,17 @@ export default function HomePage() {
 
           {/* Project Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            {visibleProjects.map((project) => (
-              <div key={project.id} className="project-card-item h-full">
+            {visibleProjects.map((project, index) => (
+              <motion.div
+                key={project.id}
+                className="project-card-item h-full"
+                initial={{ opacity: 0, y: 22 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1], delay: (index % 2) * 0.05 }}
+              >
                 <ProjectCard project={project} />
-              </div>
+              </motion.div>
             ))}
           </div>
 
@@ -243,7 +150,7 @@ export default function HomePage() {
             {safeProjects.length > 4 && (
               <button
                 onClick={() => setShowAllProjects(!showAllProjects)}
-                className="inline-flex items-center gap-2.5 px-6 py-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-gray-200 dark:border-slate-700/80 rounded-2xl text-sm font-bold text-gray-800 dark:text-gray-200 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all shadow-lg shadow-blue-500/5 cursor-pointer hover:scale-102"
+                className="inline-flex items-center gap-2.5 px-6 py-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-gray-200 dark:border-slate-700/80 rounded-2xl text-sm font-bold text-gray-800 dark:text-gray-200 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-all shadow-lg shadow-blue-500/5 cursor-pointer hover:scale-102"
               >
                 <span>{showAllProjects ? "Show Less" : `See More Projects (${safeProjects.length - 4} more)`}</span>
                 {showAllProjects ? (
@@ -271,10 +178,9 @@ export default function HomePage() {
       {/* Certifications Section */}
       <section
         id="certifications"
-        ref={certsRef}
-        className="relative py-20 md:py-28 bg-slate-100/60 dark:bg-slate-900/40 backdrop-blur-sm border-y border-slate-200/80 dark:border-slate-800/60 transition-colors duration-300 overflow-hidden"
+        className="relative py-20 md:py-28 bg-slate-100/60 dark:bg-slate-900/40 backdrop-blur-xs border-y border-slate-200/80 dark:border-slate-800/60 transition-colors duration-300 overflow-hidden"
       >
-        <div className="absolute bottom-10 left-1/4 w-80 h-80 bg-indigo-400/10 dark:bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none -z-10" />
+        <div className="absolute bottom-10 left-1/4 w-80 h-80 rounded-full ambient-glow-2 -z-10" />
         <DecorativeCurves variant="section" className="top-0 left-0 w-full opacity-50" />
         <div className="max-w-[1200px] mx-auto px-6 relative z-10">
           <SectionHeading
@@ -282,10 +188,17 @@ export default function HomePage() {
             subtitle="Verified technical credentials and industry assessments"
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {safeCerts.map((cert) => (
-              <div key={cert.id} className="cert-card-item h-full">
+            {safeCerts.map((cert, index) => (
+              <motion.div
+                key={cert.id}
+                className="cert-card-item h-full"
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: (index % 4) * 0.04 }}
+              >
                 <CertificateCard certificate={cert} />
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -294,7 +207,6 @@ export default function HomePage() {
       {/* Education Section */}
       <section
         id="education"
-        ref={educationRef}
         className="relative py-20 md:py-28 transition-colors duration-300"
       >
         <div className="max-w-[1200px] mx-auto px-6">
@@ -304,12 +216,19 @@ export default function HomePage() {
           />
           <div className="max-w-2xl mx-auto">
             {safeEdu.map((item, index) => (
-              <div key={item.id} className="education-item">
+              <motion.div
+                key={item.id}
+                className="education-item"
+                initial={{ opacity: 0, x: -16 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1], delay: index * 0.05 }}
+              >
                 <EducationCard
                   item={item}
                   isLast={index === safeEdu.length - 1}
                 />
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -318,10 +237,9 @@ export default function HomePage() {
       {/* Centered Contact Section with Perfectly Symmetrical Badges */}
       <section
         id="contact"
-        ref={contactRef}
-        className="relative py-20 md:py-28 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-sm border-t border-gray-200/80 dark:border-slate-800/80 transition-colors duration-300 overflow-hidden"
+        className="relative py-20 md:py-28 bg-slate-50/70 dark:bg-slate-900/60 backdrop-blur-xs border-t border-gray-200/80 dark:border-slate-800/80 transition-colors duration-300 overflow-hidden"
       >
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-gradient-to-tr from-blue-500/15 to-indigo-500/10 dark:from-blue-600/15 dark:to-cyan-500/10 rounded-full blur-[130px] pointer-events-none -z-10" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] rounded-full ambient-glow-3 -z-10" />
         <DecorativeCurves variant="section" className="top-0 left-0 w-full opacity-50" />
         <div className="max-w-[840px] mx-auto px-6 relative z-10">
           <SectionHeading
@@ -372,9 +290,15 @@ export default function HomePage() {
           </div>
 
           {/* Centered Contact Form Container */}
-          <div className="contact-form-card-container mx-auto">
+          <motion.div
+            className="contact-form-card-container mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          >
             <ContactForm />
-          </div>
+          </motion.div>
         </div>
       </section>
     </main>

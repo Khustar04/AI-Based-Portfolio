@@ -137,47 +137,53 @@ export default function AIAssistant() {
     const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
     dragStartXRef.current = clientX;
     initialPosXRef.current = posXRef.current;
-  };
 
-  useEffect(() => {
-    const onMove = (e) => {
+    let rafId = null;
+
+    const onMove = (moveEvt) => {
       if (!isDraggingRef.current) return;
-      const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
-      const deltaX = clientX - dragStartXRef.current;
+      const currentX = moveEvt.clientX || moveEvt.touches?.[0]?.clientX || 0;
+      const deltaX = currentX - dragStartXRef.current;
 
       if (Math.abs(deltaX) > 4) {
         hasMovedRef.current = true;
-        if (e.cancelable) e.preventDefault();
+        if (moveEvt.cancelable) moveEvt.preventDefault();
       }
 
-      const newX = Math.min(
-        Math.max(16, initialPosXRef.current + deltaX),
-        window.innerWidth - 76
-      );
-
-      posXRef.current = newX;
-      setPosX(newX);
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(() => {
+        const newX = Math.min(
+          Math.max(16, initialPosXRef.current + deltaX),
+          window.innerWidth - 76
+        );
+        posXRef.current = newX;
+        setPosX(newX);
+        rafId = null;
+      });
     };
 
     const onUp = () => {
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+        rafId = null;
+      }
       if (isDraggingRef.current) {
         isDraggingRef.current = false;
         localStorage.setItem("ai_button_x", String(posXRef.current));
       }
-    };
-
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    window.addEventListener("touchmove", onMove, { passive: false });
-    window.addEventListener("touchend", onUp);
-
-    return () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
       window.removeEventListener("touchmove", onMove);
       window.removeEventListener("touchend", onUp);
+      window.removeEventListener("touchcancel", onUp);
     };
-  }, []);
+
+    window.addEventListener("mousemove", onMove, { passive: false });
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onUp);
+    window.addEventListener("touchcancel", onUp);
+  };
 
   const handleButtonClick = () => {
     if (!hasMovedRef.current) {
@@ -232,15 +238,24 @@ export default function AIAssistant() {
     setMessages([...currentHistory, { role: "assistant", content: "" }]);
     setIsLoading(true);
 
+    let pendingChunkText = "";
+    let animationFrameId = null;
+
     const applyAssistantText = (text) => {
       if (!text) return;
-      setMessages((prev) => {
-        const updated = [...prev];
-        if (updated.length > 0 && updated[updated.length - 1].role === "assistant") {
-          updated[updated.length - 1].content = text;
-        }
-        return updated;
-      });
+      pendingChunkText = text;
+      if (!animationFrameId) {
+        animationFrameId = requestAnimationFrame(() => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            if (updated.length > 0 && updated[updated.length - 1].role === "assistant") {
+              updated[updated.length - 1].content = pendingChunkText;
+            }
+            return updated;
+          });
+          animationFrameId = null;
+        });
+      }
     };
 
     try {
@@ -252,8 +267,16 @@ export default function AIAssistant() {
         portfolioData,
         portfolioData
       );
-      applyAssistantText(result);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      setMessages((prev) => {
+        const updated = [...prev];
+        if (updated.length > 0 && updated[updated.length - 1].role === "assistant") {
+          updated[updated.length - 1].content = result;
+        }
+        return updated;
+      });
     } catch (err) {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
       console.warn("AI streaming error, resolving with Smart Knowledge Engine:", err);
       const smartFallback = generateSmartOfflineResponse(
         userMessage,
@@ -261,7 +284,13 @@ export default function AIAssistant() {
         isAdminMode,
         portfolioData
       );
-      applyAssistantText(smartFallback);
+      setMessages((prev) => {
+        const updated = [...prev];
+        if (updated.length > 0 && updated[updated.length - 1].role === "assistant") {
+          updated[updated.length - 1].content = smartFallback;
+        }
+        return updated;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -605,12 +634,14 @@ export default function AIAssistant() {
               <button
                 onClick={handleClearChat}
                 title="Clear chat"
+                aria-label="Clear chat history"
                 className="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
               >
                 <Trash2 size={16} />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
+                aria-label="Close AI Assistant"
                 className="text-white/80 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
               >
                 <X size={18} />
@@ -688,10 +719,13 @@ export default function AIAssistant() {
                       msg.content
                     )
                   ) : (
-                    <div className="flex gap-1.5 items-center py-1">
-                      <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms] ${isAdminMode ? "bg-amber-500" : "bg-blue-600 dark:bg-blue-400"}`} />
-                      <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms] ${isAdminMode ? "bg-amber-500" : "bg-blue-600 dark:bg-blue-400"}`} />
-                      <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms] ${isAdminMode ? "bg-amber-500" : "bg-blue-600 dark:bg-blue-400"}`} />
+                    <div className="flex items-center gap-2 py-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                      <div className="flex gap-1 items-center">
+                        <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms] ${isAdminMode ? "bg-amber-500" : "bg-blue-600 dark:bg-blue-400"}`} />
+                        <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms] ${isAdminMode ? "bg-amber-500" : "bg-blue-600 dark:bg-blue-400"}`} />
+                        <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms] ${isAdminMode ? "bg-amber-500" : "bg-blue-600 dark:bg-blue-400"}`} />
+                      </div>
+                      <span className="text-[11px] animate-pulse font-medium">{isAdminMode ? "Processing command..." : "Thinking..."}</span>
                     </div>
                   )}
                 </div>
@@ -730,6 +764,10 @@ export default function AIAssistant() {
             <div className="flex gap-2">
               <input
                 ref={inputRef}
+                id="ai-assistant-input"
+                name="ai-assistant-prompt"
+                aria-label="Ask AI Assistant"
+                autoComplete="off"
                 type="text"
                 placeholder={
                   isAdminMode
@@ -743,6 +781,7 @@ export default function AIAssistant() {
               />
               <button
                 onClick={() => handleSend()}
+                aria-label="Send message"
                 disabled={!input.trim() || isLoading}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-md ${
                   isAdminMode

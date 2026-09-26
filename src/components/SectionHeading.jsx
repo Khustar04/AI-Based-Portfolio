@@ -1,32 +1,12 @@
-import { useEffect, useRef } from "react";
-import { gsap } from "../utils/gsapAnimations";
+import { motion } from "motion/react";
 
 export default function SectionHeading({ title, subtitle, className = "" }) {
-  const headingRef = useRef(null);
-
-  useEffect(() => {
-    if (!headingRef.current) return;
-
-    const ctx = gsap.context(() => {
-      gsap.from(headingRef.current, {
-        scrollTrigger: {
-          trigger: headingRef.current,
-          start: "top 88%",
-          once: true,
-        },
-        opacity: 0,
-        y: 20,
-        duration: 0.6,
-        ease: "power2.out",
-      });
-    }, headingRef);
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <div
-      ref={headingRef}
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       className={`text-center mb-16 ${className}`}
     >
       <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
@@ -38,6 +18,6 @@ export default function SectionHeading({ title, subtitle, className = "" }) {
           {subtitle}
         </p>
       )}
-    </div>
+    </motion.div>
   );
 }

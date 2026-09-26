@@ -9,7 +9,12 @@ import DecorativeCurves from "../components/DecorativeCurves";
 export default function ProjectDetailPage() {
   const { slug } = useParams();
   const { projects } = usePortfolioData();
-  const project = projects.find((p) => p.slug === slug || p.id === slug);
+  const cleanSlug = (slug || "").trim().toLowerCase();
+  const project = (projects || []).find(
+    (p) =>
+      (p.slug || "").trim().toLowerCase() === cleanSlug ||
+      String(p.id || "").trim().toLowerCase() === cleanSlug
+  );
 
   const [imgError, setImgError] = useState(false);
 
@@ -57,6 +62,9 @@ export default function ProjectDetailPage() {
             <img
               src={project.image}
               alt={project.title}
+              width="900"
+              height="506"
+              decoding="async"
               className="w-full h-full object-cover"
               onError={() => setImgError(true)}
             />

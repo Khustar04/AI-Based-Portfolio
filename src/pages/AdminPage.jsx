@@ -215,7 +215,7 @@ export default function AdminPage() {
             ? "Photo uploaded to Cloud Storage (Visible globally)!"
             : "Profile photo updated!"
         );
-      } catch (err) {
+      } catch {
         showToast("Failed to process image file", "error");
       }
     }
@@ -438,7 +438,7 @@ export default function AdminPage() {
     }));
   };
 
-  const handleProjectSave = (e) => {
+  const handleProjectSave = async (e) => {
     e.preventDefault();
     if (isUploadingProjectImage) {
       showToast("Please wait for project poster to finish uploading", "error");
@@ -449,14 +449,19 @@ export default function AdminPage() {
       return;
     }
 
-    if (editingProject) {
-      updateProject(editingProject.id, projectForm);
-      showToast(`Updated project "${projectForm.title}"!`);
-    } else {
-      addProject(projectForm);
-      showToast(`Added new project "${projectForm.title}"!`);
+    try {
+      if (editingProject) {
+        await updateProject(editingProject.id, projectForm);
+        showToast(`Updated project "${projectForm.title}"! Changes are live across portfolio.`);
+      } else {
+        await addProject(projectForm);
+        showToast(`Added new project "${projectForm.title}"! Changes are live across portfolio.`);
+      }
+      setIsProjectModalOpen(false);
+    } catch (err) {
+      console.error("Failed to save project:", err);
+      showToast("Error saving project: " + err.message, "error");
     }
-    setIsProjectModalOpen(false);
   };
 
   // -------------------------------------------------------------
@@ -561,7 +566,7 @@ export default function AdminPage() {
     setIsCertModalOpen(true);
   };
 
-  const handleCertImageUpload = async (e) => {
+  const _handleCertImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
@@ -578,7 +583,7 @@ export default function AdminPage() {
             ? "Certificate badge uploaded to Cloud Storage!"
             : "Certificate badge uploaded!"
         );
-      } catch (err) {
+      } catch {
         showToast("Failed to process image file", "error");
       }
     }

@@ -26,9 +26,33 @@ const STORAGE_KEYS = {
   SOCIAL_LINKS: "portfolio_social_links_v1",
   ADMIN_PIN: "portfolio_admin_pin_v1",
   ADMIN_AUTH: "portfolio_admin_auth_v1",
+  LAST_UPDATED: "portfolio_last_updated_v1",
 };
 
 const DEFAULT_ADMIN_PIN = "admin123";
+
+let appBroadcastChannel = null;
+if (typeof window !== "undefined" && window.BroadcastChannel) {
+  try {
+    appBroadcastChannel = new BroadcastChannel("portfolio_state_broadcast");
+  } catch (err) {
+    console.warn("BroadcastChannel not supported:", err);
+  }
+}
+
+function broadcastLocalChange(payload, timestamp) {
+  if (appBroadcastChannel) {
+    try {
+      appBroadcastChannel.postMessage({
+        type: "PORTFOLIO_UPDATE",
+        payload,
+        timestamp,
+      });
+    } catch {
+      // ignore
+    }
+  }
+}
 
 function loadFromStorage(key, defaultValue) {
   try {
@@ -121,15 +145,36 @@ export function PortfolioDataProvider({ children }) {
   const isInitialMountRef = useRef(true);
 
   // Helper to apply incoming cloud/broadcast payload to state without triggering save loop
-  const applyPayloadToState = (cloudData) => {
+  const applyPayloadToState = (cloudData, updatedAt = null) => {
     if (!cloudData) return;
     isIncomingSyncRef.current = true;
-    if (cloudData.personalInfo) setPersonalInfoState(cloudData.personalInfo);
-    if (Array.isArray(cloudData.projects)) setProjectsState(cloudData.projects);
-    if (Array.isArray(cloudData.skills)) setSkillsState(cloudData.skills);
-    if (Array.isArray(cloudData.certifications)) setCertificationsState(cloudData.certifications);
-    if (Array.isArray(cloudData.education)) setEducationState(cloudData.education);
-    if (Array.isArray(cloudData.socialLinks)) setSocialLinksState(cloudData.socialLinks);
+    if (cloudData.personalInfo) {
+      setPersonalInfoState(cloudData.personalInfo);
+      saveToStorage(STORAGE_KEYS.PERSONAL_INFO, cloudData.personalInfo);
+    }
+    if (Array.isArray(cloudData.projects)) {
+      setProjectsState(cloudData.projects);
+      saveToStorage(STORAGE_KEYS.PROJECTS, cloudData.projects);
+    }
+    if (Array.isArray(cloudData.skills)) {
+      setSkillsState(cloudData.skills);
+      saveToStorage(STORAGE_KEYS.SKILLS, cloudData.skills);
+    }
+    if (Array.isArray(cloudData.certifications)) {
+      setCertificationsState(cloudData.certifications);
+      saveToStorage(STORAGE_KEYS.CERTIFICATIONS, cloudData.certifications);
+    }
+    if (Array.isArray(cloudData.education)) {
+      setEducationState(cloudData.education);
+      saveToStorage(STORAGE_KEYS.EDUCATION, cloudData.education);
+    }
+    if (Array.isArray(cloudData.socialLinks)) {
+      setSocialLinksState(cloudData.socialLinks);
+      saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, cloudData.socialLinks);
+    }
+    if (updatedAt) {
+      saveToStorage(STORAGE_KEYS.LAST_UPDATED, updatedAt);
+    }
   };
 
   // 1. Supabase Realtime WebSocket Subscription (Broadcast + Postgres changes)
@@ -143,7 +188,7 @@ export function PortfolioDataProvider({ children }) {
       channel
         .on("broadcast", { event: "portfolio_state_update" }, (msg) => {
           if (msg?.payload) {
-            applyPayloadToState(msg.payload);
+            applyPayloadToState(msg.payload, msg.payload?._updatedAt);
           }
         })
         .on(
@@ -156,7 +201,7 @@ export function PortfolioDataProvider({ children }) {
           },
           (payload) => {
             if (payload?.new?.payload) {
-              applyPayloadToState(payload.new.payload);
+              applyPayloadToState(payload.new.payload, payload.new.updated_at);
             }
           }
         )
@@ -170,14 +215,37 @@ export function PortfolioDataProvider({ children }) {
     }
   }, [cloudStatus?.isConfigured]);
 
-  // 2. Tab Focus & Visibility Cloud Hydration
+  // 2. Tab Focus & Visibility Cloud Hydration with Timestamp Conflict Protection
   useEffect(() => {
     const syncWithCloud = async () => {
       try {
-        const cloudData = await fetchCloudPortfolio();
-        if (cloudData) {
-          applyPayloadToState(cloudData);
+        const cloudRes = await fetchCloudPortfolio();
+        if (!cloudRes) return;
+
+        const cloudPayload = cloudRes.payload || cloudRes;
+        const cloudUpdatedAt = cloudRes.updatedAt || cloudPayload?._updatedAt;
+        const localUpdatedAt = loadFromStorage(STORAGE_KEYS.LAST_UPDATED, null);
+
+        // Prevent race condition: if local changes are newer, do NOT overwrite with old cloud snapshot
+        if (localUpdatedAt && cloudUpdatedAt) {
+          const localTime = new Date(localUpdatedAt).getTime();
+          const cloudTime = new Date(cloudUpdatedAt).getTime();
+
+          if (localTime > cloudTime + 800) {
+            const currentSnapshot = {
+              personalInfo,
+              projects,
+              skills,
+              certifications,
+              education,
+              socialLinks,
+            };
+            saveCloudPortfolio(currentSnapshot, null, localUpdatedAt);
+            return;
+          }
         }
+
+        applyPayloadToState(cloudPayload, cloudUpdatedAt);
       } catch {
         // Silently ignore network hiccup
       }
@@ -204,26 +272,16 @@ export function PortfolioDataProvider({ children }) {
     };
   }, [cloudStatus?.isConfigured]);
 
-  // 2. Local multi-tab real-time listener (updates other tabs on same device immediately)
+  // 3. Local multi-tab real-time listener (updates other tabs on same device immediately)
   useEffect(() => {
-    let bc = null;
-    try {
-      if (typeof window !== "undefined" && window.BroadcastChannel) {
-        bc = new BroadcastChannel("portfolio_state_broadcast");
-        bc.onmessage = (event) => {
-          if (event.data) {
-            const { personalInfo, projects, skills, certifications, education, socialLinks } = event.data;
-            if (personalInfo) setPersonalInfoState(personalInfo);
-            if (projects) setProjectsState(projects);
-            if (skills) setSkillsState(skills);
-            if (certifications) setCertificationsState(certifications);
-            if (education) setEducationState(education);
-            if (socialLinks) setSocialLinksState(socialLinks);
-          }
-        };
+    const handleBroadcast = (event) => {
+      if (event.data?.payload) {
+        applyPayloadToState(event.data.payload, event.data.timestamp);
       }
-    } catch {
-      // Fallback
+    };
+
+    if (appBroadcastChannel) {
+      appBroadcastChannel.addEventListener("message", handleBroadcast);
     }
 
     const handleStorage = (e) => {
@@ -244,7 +302,9 @@ export function PortfolioDataProvider({ children }) {
     window.addEventListener("storage", handleStorage);
 
     return () => {
-      if (bc) bc.close();
+      if (appBroadcastChannel) {
+        appBroadcastChannel.removeEventListener("message", handleBroadcast);
+      }
       window.removeEventListener("storage", handleStorage);
     };
   }, []);
@@ -402,8 +462,30 @@ export function PortfolioDataProvider({ children }) {
     return { success: true, message: "Admin PIN updated successfully!" };
   };
 
+  // Instant multi-destination commit helper (synchronous storage, broadcast across tabs, and cloud DB push)
+  const commitChange = async (partialUpdates) => {
+    const nowIso = new Date().toISOString();
+    saveToStorage(STORAGE_KEYS.LAST_UPDATED, nowIso);
+
+    // 1. Broadcast immediately across open tabs on this browser
+    broadcastLocalChange(partialUpdates, nowIso);
+
+    // 2. Push to Supabase Cloud immediately
+    const fullSnapshot = {
+      personalInfo: partialUpdates.personalInfo !== undefined ? partialUpdates.personalInfo : personalInfo,
+      projects: partialUpdates.projects !== undefined ? partialUpdates.projects : projects,
+      skills: partialUpdates.skills !== undefined ? partialUpdates.skills : skills,
+      certifications: partialUpdates.certifications !== undefined ? partialUpdates.certifications : certifications,
+      education: partialUpdates.education !== undefined ? partialUpdates.education : education,
+      socialLinks: partialUpdates.socialLinks !== undefined ? partialUpdates.socialLinks : socialLinks,
+    };
+
+    return await saveCloudPortfolio(fullSnapshot, null, nowIso);
+  };
+
   // Personal Info
-  const updatePersonalInfo = (updatedFields) => {
+  const updatePersonalInfo = async (updatedFields) => {
+    let nextPersonalInfo = null;
     setPersonalInfoState((prev) => {
       let firstName = prev.firstName;
       let lastName = prev.lastName;
@@ -414,7 +496,7 @@ export function PortfolioDataProvider({ children }) {
         lastName = parts.slice(1).join(" ") || prev.lastName;
         initials = ((parts[0] ? parts[0][0] : "K") + (parts[1] ? parts[1][0] : "")).toUpperCase();
       }
-      return {
+      nextPersonalInfo = {
         ...prev,
         ...updatedFields,
         firstName: updatedFields.firstName || firstName,
@@ -424,21 +506,26 @@ export function PortfolioDataProvider({ children }) {
           ? updatedFields.titles
           : prev.titles,
       };
+      saveToStorage(STORAGE_KEYS.PERSONAL_INFO, nextPersonalInfo);
+      return nextPersonalInfo;
     });
+
+    if (nextPersonalInfo) {
+      await commitChange({ personalInfo: nextPersonalInfo });
+    }
   };
 
   // Projects CRUD
-  const addProject = (newProject) => {
+  const addProject = async (newProject) => {
     const slug =
-      newProject.slug ||
-      newProject.title
+      (newProject.slug || newProject.title || "")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+        .replace(/(^-|-$)/g, "") || `project-${Date.now()}`;
 
     const projectWithId = {
       ...newProject,
-      id: newProject.id || slug || `project-${Date.now()}`,
+      id: newProject.id || slug,
       slug,
       status: newProject.status || "featured",
       technologies: Array.isArray(newProject.technologies)
@@ -447,66 +534,109 @@ export function PortfolioDataProvider({ children }) {
       features: Array.isArray(newProject.features) ? newProject.features : [],
     };
 
-    setProjectsState((prev) => [projectWithId, ...prev]);
+    const nextProjects = [
+      projectWithId,
+      ...projects.filter(
+        (p) =>
+          String(p.id).trim() !== String(projectWithId.id).trim() &&
+          (!p.slug || p.slug.trim().toLowerCase() !== projectWithId.slug.toLowerCase())
+      ),
+    ];
+
+    setProjectsState(nextProjects);
+    saveToStorage(STORAGE_KEYS.PROJECTS, nextProjects);
+    await commitChange({ projects: nextProjects });
     return projectWithId;
   };
 
-  const updateProject = (id, updatedProject) => {
-    setProjectsState((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? {
-              ...p,
-              ...updatedProject,
-              technologies: Array.isArray(updatedProject.technologies)
-                ? updatedProject.technologies
-                : p.technologies || [],
-              features: Array.isArray(updatedProject.features)
-                ? updatedProject.features
-                : p.features || [],
-            }
-          : p
-      )
-    );
+  const updateProject = async (id, updatedProject) => {
+    const targetId = String(id || "").trim();
+    const nextProjects = projects.map((p) => {
+      const isMatch =
+        String(p.id).trim() === targetId ||
+        (p.slug && p.slug.trim().toLowerCase() === targetId.toLowerCase());
+
+      if (!isMatch) return p;
+
+      return {
+        ...p,
+        ...updatedProject,
+        id: p.id,
+        slug: updatedProject.slug || p.slug || targetId,
+        technologies: Array.isArray(updatedProject.technologies)
+          ? updatedProject.technologies
+          : p.technologies || [],
+        features: Array.isArray(updatedProject.features)
+          ? updatedProject.features
+          : p.features || [],
+      };
+    });
+
+    setProjectsState(nextProjects);
+    saveToStorage(STORAGE_KEYS.PROJECTS, nextProjects);
+    await commitChange({ projects: nextProjects });
+    return nextProjects;
   };
 
-  const deleteProject = (id) => {
-    setProjectsState((prev) => prev.filter((p) => p.id !== id));
+  const deleteProject = async (id) => {
+    const targetId = String(id || "").trim();
+    const nextProjects = projects.filter(
+      (p) =>
+        String(p.id).trim() !== targetId &&
+        (!p.slug || p.slug.trim().toLowerCase() !== targetId.toLowerCase())
+    );
+
+    setProjectsState(nextProjects);
+    saveToStorage(STORAGE_KEYS.PROJECTS, nextProjects);
+    await commitChange({ projects: nextProjects });
+    return nextProjects;
   };
 
   // Skills CRUD
-  const addSkillCategory = (newCategory) => {
+  const addSkillCategory = async (newCategory) => {
     const categoryWithId = {
       ...newCategory,
       id: newCategory.id || `skill-${Date.now()}`,
       icon: newCategory.icon || "Code2",
       items: Array.isArray(newCategory.items) ? newCategory.items : [],
     };
-    setSkillsState((prev) => [...prev, categoryWithId]);
+    const nextSkills = [...skills, categoryWithId];
+    setSkillsState(nextSkills);
+    saveToStorage(STORAGE_KEYS.SKILLS, nextSkills);
+    await commitChange({ skills: nextSkills });
+    return categoryWithId;
   };
 
-  const updateSkillCategory = (id, updatedCategory) => {
-    setSkillsState((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              ...s,
-              ...updatedCategory,
-              items: Array.isArray(updatedCategory.items)
-                ? updatedCategory.items
-                : s.items || [],
-            }
-          : s
-      )
+  const updateSkillCategory = async (id, updatedCategory) => {
+    const targetId = String(id || "").trim();
+    const nextSkills = skills.map((s) =>
+      String(s.id).trim() === targetId
+        ? {
+            ...s,
+            ...updatedCategory,
+            items: Array.isArray(updatedCategory.items)
+              ? updatedCategory.items
+              : s.items || [],
+          }
+        : s
     );
+    setSkillsState(nextSkills);
+    saveToStorage(STORAGE_KEYS.SKILLS, nextSkills);
+    await commitChange({ skills: nextSkills });
+    return nextSkills;
   };
 
-  const deleteSkillCategory = (id) => {
-    setSkillsState((prev) => prev.filter((s) => s.id !== id));
+  const deleteSkillCategory = async (id) => {
+    const targetId = String(id || "").trim();
+    const nextSkills = skills.filter((s) => String(s.id).trim() !== targetId);
+    setSkillsState(nextSkills);
+    saveToStorage(STORAGE_KEYS.SKILLS, nextSkills);
+    await commitChange({ skills: nextSkills });
+    return nextSkills;
   };
 
   // Certifications CRUD
-  const addCertification = (newCert) => {
+  const addCertification = async (newCert) => {
     const slug =
       newCert.slug ||
       newCert.title
@@ -522,66 +652,89 @@ export function PortfolioDataProvider({ children }) {
         ? newCert.skillsLearned
         : [],
     };
-    setCertificationsState((prev) => [...prev, certWithId]);
+    const nextCerts = [...certifications, certWithId];
+    setCertificationsState(nextCerts);
+    saveToStorage(STORAGE_KEYS.CERTIFICATIONS, nextCerts);
+    await commitChange({ certifications: nextCerts });
     return certWithId;
   };
 
-  const updateCertification = (id, updatedCert) => {
-    setCertificationsState((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? {
-              ...c,
-              ...updatedCert,
-              skillsLearned: Array.isArray(updatedCert.skillsLearned)
-                ? updatedCert.skillsLearned
-                : c.skillsLearned || [],
-            }
-          : c
-      )
+  const updateCertification = async (id, updatedCert) => {
+    const targetId = String(id || "").trim();
+    const nextCerts = certifications.map((c) =>
+      String(c.id).trim() === targetId
+        ? {
+            ...c,
+            ...updatedCert,
+            skillsLearned: Array.isArray(updatedCert.skillsLearned)
+              ? updatedCert.skillsLearned
+              : c.skillsLearned || [],
+          }
+        : c
     );
+    setCertificationsState(nextCerts);
+    saveToStorage(STORAGE_KEYS.CERTIFICATIONS, nextCerts);
+    await commitChange({ certifications: nextCerts });
+    return nextCerts;
   };
 
-  const deleteCertification = (id) => {
-    setCertificationsState((prev) => prev.filter((c) => c.id !== id));
+  const deleteCertification = async (id) => {
+    const targetId = String(id || "").trim();
+    const nextCerts = certifications.filter((c) => String(c.id).trim() !== targetId);
+    setCertificationsState(nextCerts);
+    saveToStorage(STORAGE_KEYS.CERTIFICATIONS, nextCerts);
+    await commitChange({ certifications: nextCerts });
+    return nextCerts;
   };
 
   // Education CRUD
-  const addEducation = (newEdu) => {
+  const addEducation = async (newEdu) => {
     const eduWithId = {
       ...newEdu,
       id: newEdu.id || `edu-${Date.now()}`,
       coursework: Array.isArray(newEdu.coursework) ? newEdu.coursework : [],
       highlights: Array.isArray(newEdu.highlights) ? newEdu.highlights : [],
     };
-    setEducationState((prev) => [...prev, eduWithId]);
+    const nextEdu = [...education, eduWithId];
+    setEducationState(nextEdu);
+    saveToStorage(STORAGE_KEYS.EDUCATION, nextEdu);
+    await commitChange({ education: nextEdu });
+    return eduWithId;
   };
 
-  const updateEducation = (id, updatedEdu) => {
-    setEducationState((prev) =>
-      prev.map((e) =>
-        e.id === id
-          ? {
-              ...e,
-              ...updatedEdu,
-              coursework: Array.isArray(updatedEdu.coursework)
-                ? updatedEdu.coursework
-                : e.coursework || [],
-              highlights: Array.isArray(updatedEdu.highlights)
-                ? updatedEdu.highlights
-                : e.highlights || [],
-            }
-          : e
-      )
+  const updateEducation = async (id, updatedEdu) => {
+    const targetId = String(id || "").trim();
+    const nextEdu = education.map((e) =>
+      String(e.id).trim() === targetId
+        ? {
+            ...e,
+            ...updatedEdu,
+            coursework: Array.isArray(updatedEdu.coursework)
+              ? updatedEdu.coursework
+              : e.coursework || [],
+            highlights: Array.isArray(updatedEdu.highlights)
+              ? updatedEdu.highlights
+              : e.highlights || [],
+          }
+        : e
     );
+    setEducationState(nextEdu);
+    saveToStorage(STORAGE_KEYS.EDUCATION, nextEdu);
+    await commitChange({ education: nextEdu });
+    return nextEdu;
   };
 
-  const deleteEducation = (id) => {
-    setEducationState((prev) => prev.filter((e) => e.id !== id));
+  const deleteEducation = async (id) => {
+    const targetId = String(id || "").trim();
+    const nextEdu = education.filter((e) => String(e.id).trim() !== targetId);
+    setEducationState(nextEdu);
+    saveToStorage(STORAGE_KEYS.EDUCATION, nextEdu);
+    await commitChange({ education: nextEdu });
+    return nextEdu;
   };
 
   // Social Links CRUD
-  const addSocialLink = (newSocial) => {
+  const addSocialLink = async (newSocial) => {
     const socialWithId = {
       ...newSocial,
       id: newSocial.id || `social-${Date.now()}`,
@@ -591,44 +744,43 @@ export function PortfolioDataProvider({ children }) {
       icon: newSocial.icon || newSocial.iconName || "globe",
       iconName: newSocial.iconName || newSocial.icon || "globe",
     };
-    setSocialLinksState((prev) => {
-      const currentList = Array.isArray(prev) ? prev : [];
-      const next = [...currentList, socialWithId];
-      saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, next);
-      return next;
-    });
+    const nextSocials = [...socialLinks, socialWithId];
+    setSocialLinksState(nextSocials);
+    saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, nextSocials);
+    await commitChange({ socialLinks: nextSocials });
+    return socialWithId;
   };
 
-  const updateSocialLink = (id, updatedSocial) => {
-    setSocialLinksState((prev) => {
-      const currentList = Array.isArray(prev) ? prev : [];
-      const next = currentList.map((s) => {
-        if (String(s.id) === String(id) || s.id === id) {
-          return {
-            ...s,
-            ...updatedSocial,
-            id: s.id,
-            platform: updatedSocial.platform || updatedSocial.name || s.platform || "Link",
-            url: updatedSocial.url || s.url || "",
-            username: updatedSocial.username !== undefined ? updatedSocial.username : (s.username || ""),
-            icon: updatedSocial.icon || updatedSocial.iconName || s.icon || "globe",
-            iconName: updatedSocial.iconName || updatedSocial.icon || s.iconName || "globe",
-          };
-        }
-        return s;
-      });
-      saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, next);
-      return next;
+  const updateSocialLink = async (id, updatedSocial) => {
+    const targetId = String(id || "").trim();
+    const nextSocials = socialLinks.map((s) => {
+      if (String(s.id).trim() === targetId) {
+        return {
+          ...s,
+          ...updatedSocial,
+          id: s.id,
+          platform: updatedSocial.platform || updatedSocial.name || s.platform || "Link",
+          url: updatedSocial.url || s.url || "",
+          username: updatedSocial.username !== undefined ? updatedSocial.username : (s.username || ""),
+          icon: updatedSocial.icon || updatedSocial.iconName || s.icon || "globe",
+          iconName: updatedSocial.iconName || updatedSocial.icon || s.iconName || "globe",
+        };
+      }
+      return s;
     });
+    setSocialLinksState(nextSocials);
+    saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, nextSocials);
+    await commitChange({ socialLinks: nextSocials });
+    return nextSocials;
   };
 
-  const deleteSocialLink = (id) => {
-    setSocialLinksState((prev) => {
-      const currentList = Array.isArray(prev) ? prev : [];
-      const next = currentList.filter((s) => String(s.id) !== String(id) && s.id !== id);
-      saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, next);
-      return next;
-    });
+  const deleteSocialLink = async (id) => {
+    const targetId = String(id || "").trim();
+    const nextSocials = socialLinks.filter((s) => String(s.id).trim() !== targetId);
+    setSocialLinksState(nextSocials);
+    saveToStorage(STORAGE_KEYS.SOCIAL_LINKS, nextSocials);
+    await commitChange({ socialLinks: nextSocials });
+    return nextSocials;
   };
 
   // Reset to original defaults

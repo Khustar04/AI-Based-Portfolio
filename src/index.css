@@ -7,9 +7,8 @@
    Custom Styles — Premium Glassmorphism Portfolio
    ============================================ */
 
-/* Smooth scrolling — offset for the fixed navbar */
+/* Offset for the fixed navbar (smooth scrolling handled exclusively by Lenis) */
 html {
-  scroll-behavior: smooth;
   scroll-padding-top: 5.5rem;
 }
 
@@ -94,8 +93,8 @@ html.dark body {
    ============================================ */
 .glass-panel {
   background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.8);
   box-shadow: 0 8px 32px 0 rgba(37, 99, 235, 0.04);
 }
@@ -103,19 +102,20 @@ html.dark body {
 .dark .glass-panel,
 html.dark .glass-panel {
   background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(51, 65, 85, 0.5);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
 }
 
 .glass-card {
   background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.8);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease;
+  contain: layout style;
 }
 
 .glass-card:hover {
@@ -128,10 +128,11 @@ html.dark .glass-panel {
 .dark .glass-card,
 html.dark .glass-card {
   background: rgba(30, 41, 59, 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(51, 65, 85, 0.5);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  contain: layout style;
 }
 
 .dark .glass-card:hover,
@@ -143,17 +144,45 @@ html.dark .glass-card:hover {
 
 .glass-pill {
   background: rgba(239, 246, 255, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border: 1px solid rgba(191, 219, 254, 0.6);
 }
 
 .dark .glass-pill,
 html.dark .glass-pill {
   background: rgba(30, 58, 138, 0.25);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border: 1px solid rgba(30, 64, 175, 0.4);
+}
+
+/* ============================================
+   Zero-Cost GPU Ambient Glow Shaders
+   Replaces expensive 100px+ Gaussian kernel blurs with native single-pass radial gradients
+   ============================================ */
+.ambient-glow-1 {
+  background: radial-gradient(circle at 50% 50%, rgba(96, 165, 250, 0.16) 0%, rgba(56, 189, 248, 0.08) 35%, rgba(96, 165, 250, 0) 70%);
+  pointer-events: none;
+}
+.dark .ambient-glow-1 {
+  background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.14) 0%, rgba(6, 182, 212, 0.06) 35%, rgba(37, 99, 235, 0) 70%);
+}
+
+.ambient-glow-2 {
+  background: radial-gradient(circle at 50% 50%, rgba(129, 140, 248, 0.14) 0%, rgba(96, 165, 250, 0.07) 35%, rgba(129, 140, 248, 0) 70%);
+  pointer-events: none;
+}
+.dark .ambient-glow-2 {
+  background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.12) 0%, rgba(59, 130, 246, 0.06) 35%, rgba(99, 102, 241, 0) 70%);
+}
+
+.ambient-glow-3 {
+  background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.14) 0%, rgba(59, 130, 246, 0.07) 35%, rgba(56, 189, 248, 0) 70%);
+  pointer-events: none;
+}
+.dark .ambient-glow-3 {
+  background: radial-gradient(circle at 50% 50%, rgba(29, 78, 216, 0.12) 0%, rgba(79, 70, 229, 0.06) 35%, rgba(29, 78, 216, 0) 70%);
 }
 
 /* ============================================
@@ -170,15 +199,13 @@ html.dark .glass-pill {
 .gpu-layer {
   transform: translateZ(0);
   backface-visibility: hidden;
-  perspective: 1000px;
-  will-change: transform, opacity;
 }
 
 /* Smooth modal & popup entrance */
 @keyframes popupEnter {
   0% {
     opacity: 0;
-    transform: scale(0.95) translateY(6px);
+    transform: scale(0.96) translateY(4px);
   }
   100% {
     opacity: 1;
@@ -187,14 +214,14 @@ html.dark .glass-pill {
 }
 
 .animate-popup-in {
-  animation: popupEnter 0.18s var(--ease-snappy) forwards;
+  animation: popupEnter 0.16s var(--ease-snappy) forwards;
 }
 
 /* Smooth fade entrance for sections & cards */
 @keyframes smoothFadeIn {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -203,6 +230,24 @@ html.dark .glass-pill {
 }
 
 .animate-smooth-fade {
-  animation: smoothFadeIn 0.25s var(--ease-snappy) forwards;
+  animation: smoothFadeIn 0.22s var(--ease-snappy) forwards;
+}
+
+/* ============================================
+   Accessibility: Prefers-Reduced-Motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 

@@ -1,17 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export default function ProjectCard({ project }) {
-  if (!project) return null;
-
-  const title = project.title || "Project";
-  const shortDescription = project.shortDescription || "";
-  const technologies = Array.isArray(project.technologies) ? project.technologies : [];
-  const features = Array.isArray(project.features) ? project.features : [];
-  const slug = project.slug || project.id || "";
-  const image = project.image || "";
-
+function ProjectCard({ project }) {
+  const image = project?.image || "";
   const [imgError, setImgError] = useState(false);
 
   // Reset imgError if image prop changes (e.g. after upload or cloud sync)
@@ -19,10 +11,17 @@ export default function ProjectCard({ project }) {
     setImgError(false);
   }, [image]);
 
+  if (!project) return null;
+
+  const title = project.title || "Project";
+  const shortDescription = project.shortDescription || "";
+  const technologies = Array.isArray(project.technologies) ? project.technologies : [];
+  const features = Array.isArray(project.features) ? project.features : [];
+  const slug = project.slug || project.id || "";
   const hasValidImage = Boolean(image && !imgError);
 
   return (
-    <div className="group h-full bg-white dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200/90 dark:border-slate-700/60 rounded-2xl overflow-hidden transition-all duration-300 shadow-md shadow-slate-200/60 dark:shadow-none hover:shadow-2xl hover:shadow-blue-500/15 hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-1.5 flex flex-col">
+    <div className="group h-full bg-white dark:bg-slate-800/50 backdrop-blur-md border border-slate-200/90 dark:border-slate-700/60 rounded-2xl overflow-hidden transition-all duration-300 shadow-md shadow-slate-200/60 dark:shadow-none hover:shadow-2xl hover:shadow-blue-500/15 hover:border-blue-400 dark:hover:border-blue-500 hover:-translate-y-1.5 flex flex-col">
       {/* Image Container */}
       <div className="p-3 pb-0">
         <div className="w-full aspect-video rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/40 relative flex items-center justify-center">
@@ -30,6 +29,10 @@ export default function ProjectCard({ project }) {
             <img
               src={image}
               alt={title}
+              width="600"
+              height="338"
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               onError={() => setImgError(true)}
             />
@@ -97,3 +100,5 @@ export default function ProjectCard({ project }) {
     </div>
   );
 }
+
+export default memo(ProjectCard);

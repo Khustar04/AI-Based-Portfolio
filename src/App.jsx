@@ -1,5 +1,8 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ReactLenis } from "lenis/react";
+import "lenis/dist/lenis.css";
+import { MotionConfig } from "motion/react";
 import { ThemeProvider } from "./context/ThemeContext";
 import { PortfolioDataProvider } from "./context/PortfolioDataContext";
 import Navbar from "./components/Navbar";
@@ -27,34 +30,47 @@ export default function App() {
   return (
     <ThemeProvider>
       <PortfolioDataProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <div className="relative min-h-screen bg-slate-50/80 dark:bg-[#0b1120] text-gray-900 dark:text-gray-100 transition-colors duration-300 overflow-x-hidden">
-            {/* GPU-Accelerated Background Luminous Orbs */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 gpu-layer">
-              <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-sky-300/15 dark:from-blue-600/10 dark:to-cyan-400/10 rounded-full blur-[80px] transform-gpu" />
-              <div className="absolute top-[35%] -left-40 w-[420px] h-[420px] bg-gradient-to-tr from-indigo-400/15 to-blue-300/10 dark:from-indigo-600/10 dark:to-blue-500/10 rounded-full blur-[90px] transform-gpu" />
-              <div className="absolute bottom-20 -right-32 w-[450px] h-[450px] bg-gradient-to-tl from-sky-400/15 to-blue-500/10 dark:from-blue-700/10 dark:to-indigo-600/10 rounded-full blur-[90px] transform-gpu" />
-            </div>
+        <ReactLenis
+          root
+          options={{
+            lerp: 0.09,
+            duration: 1.1,
+            smoothWheel: true,
+            wheelMultiplier: 1,
+            touchMultiplier: 1.5,
+          }}
+        >
+          <MotionConfig reducedMotion="user">
+            <BrowserRouter>
+              <ScrollToTop />
+              <div className="relative min-h-screen bg-slate-50/80 dark:bg-[#0b1120] text-gray-900 dark:text-gray-100 transition-colors duration-300 overflow-x-hidden">
+                {/* Hardware-Accelerated Lightweight Background Ambient Glows */}
+                <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 gpu-layer">
+                  <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full ambient-glow-1" />
+                  <div className="absolute top-[35%] -left-40 w-[420px] h-[420px] rounded-full ambient-glow-2" />
+                  <div className="absolute bottom-20 -right-32 w-[450px] h-[450px] rounded-full ambient-glow-3" />
+                </div>
 
-            <Navbar />
-            <Suspense fallback={<PageLoadingFallback />}>
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/resume" element={<ResumePage />} />
-                <Route path="/projects/:slug" element={<ProjectDetailPage />} />
-                <Route
-                  path="/certifications/:slug"
-                  element={<CertificateDetailPage />}
-                />
-                <Route path="/manage-portfolio" element={<AdminPage />} />
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </Suspense>
-            <Footer />
-            <AIAssistant />
-          </div>
-        </BrowserRouter>
+                <Navbar />
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/resume" element={<ResumePage />} />
+                    <Route path="/projects/:slug" element={<ProjectDetailPage />} />
+                    <Route
+                      path="/certifications/:slug"
+                      element={<CertificateDetailPage />}
+                    />
+                    <Route path="/manage-portfolio" element={<AdminPage />} />
+                    <Route path="*" element={<NotFoundPage />} />
+                  </Routes>
+                </Suspense>
+                <Footer />
+                <AIAssistant />
+              </div>
+            </BrowserRouter>
+          </MotionConfig>
+        </ReactLenis>
       </PortfolioDataProvider>
     </ThemeProvider>
   );

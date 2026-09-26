@@ -126,7 +126,7 @@ export async function fetchCloudPortfolio(customClient = null) {
       return null;
     }
 
-    return data.payload;
+    return { payload: data.payload, updatedAt: data.updated_at };
   } catch (err) {
     console.warn("Cloud sync fetch failed, using local data:", err);
     return null;
@@ -136,16 +136,18 @@ export async function fetchCloudPortfolio(customClient = null) {
 /**
  * Save complete portfolio data snapshot to Supabase and broadcast live
  */
-export async function saveCloudPortfolio(payload, customClient = null) {
+export async function saveCloudPortfolio(payload, customClient = null, timestamp = null) {
   const supabase = customClient || getSupabase();
   if (!supabase) return { success: false, message: "Supabase not connected" };
+
+  const updatedAt = timestamp || new Date().toISOString();
 
   try {
     const { error } = await supabase.from("portfolio_data").upsert(
       {
         id: "main_portfolio",
         payload: payload,
-        updated_at: new Date().toISOString(),
+        updated_at: updatedAt,
       },
       { onConflict: "id" }
     );
@@ -161,13 +163,13 @@ export async function saveCloudPortfolio(payload, customClient = null) {
       await broadcastChannel.send({
         type: "broadcast",
         event: "portfolio_state_update",
-        payload,
+        payload: { ...payload, _updatedAt: updatedAt },
       });
     } catch {
       // Ignore broadcast error if connection not ready
     }
 
-    return { success: true };
+    return { success: true, updatedAt };
   } catch (err) {
     console.warn("Could not save to Supabase cloud:", err);
     return { success: false, message: err.message };

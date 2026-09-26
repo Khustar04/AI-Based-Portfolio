@@ -15,8 +15,10 @@ export default defineConfig({
           if (id.includes('node_modules')) {
             if (id.includes('lucide-react')) return 'icons';
             if (id.includes('@supabase')) return 'supabase';
-            if (id.includes('gsap')) return 'gsap';
+            if (id.includes('motion')) return 'motion';
+            if (id.includes('lenis')) return 'lenis';
             if (id.includes('react-router') || id.includes('react-dom') || id.includes('react/')) return 'react-core';
+            if (id.includes('react-easy-crop')) return 'admin-cropper';
             return 'vendor';
           }
         },
